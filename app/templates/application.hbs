@@ -1,3 +1,6 @@
-{{!outlet}}
-
-<App />
+<div class="flex items-stretch h-screen">
+  <Sidebar class="flex-none border w-64" />
+  <div class="flex-1 border">
+    {{outlet}}
+  </div>
+</div>
