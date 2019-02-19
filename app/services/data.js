@@ -1,4 +1,5 @@
 import Service from '@ember/service';
+import {computed} from '@ember/object';
 
 export default Service.extend({
   init() {
@@ -32,8 +33,19 @@ export default Service.extend({
     let tx = db.transaction('pages', 'readwrite');
     let pages = tx.objectStore('pages');
     pages.add(page);
-    return promisifyTx(tx);
+    let result = promisifyTx(tx);
+
+    result.then(() => this.notifyPropertyChange('homes'));
+
+    return result;
   },
+
+  homes: computed(async function() {
+    let db = await this.db;
+    let tx = db.transaction('pages');
+    let pages = tx.objectStore('pages');
+    return promisifyReq(pages.getAll());
+  }),
 });
 
 

@@ -6,7 +6,7 @@
   </div>
 {{/link-to}}
 <ul>
-{{#each (await allPages) as |page|}}
+{{#each (await data.homes) as |page|}}
   <li>{{link-to page.title 'page' page.id}}</li>
 {{/each}}
 </ul>
