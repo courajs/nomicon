@@ -13,7 +13,8 @@ export default Service.extend({
       req.onsuccess = () => resolve(req.result);
       req.onupgradeneeded = function(e) {
         let db = e.target.result;
-        let pages = db.createObjectStore("pages", { keyPath: "id" });
+        db.createObjectStore("pages", { keyPath: "id" });
+
         let links = db.createObjectStore("links", { keyPath: "id" });
         links.createIndex("from", "from", { unique: false });
         links.createIndex("to", "to", { unique: false });

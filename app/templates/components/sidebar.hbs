@@ -5,15 +5,15 @@
     </button>
   </div>
 {{/link-to}}
-<ul>
 
-{{!
-  @key doesn't actually help here, since data.homes gets replaced by
-  a new promise, and the await helper temporarily resolves to null.
-  So the whole list is cleared before later being re-rendered. Hence,
-  no pre-existing DOM nodes to reconnect to via the key.
-}}
-{{#each (await data.homes) key="id" as |page|}}
-  <li>{{link-to page.title 'page' page.id}}</li>
-{{/each}}
+<ul>
+  {{!
+    @key doesn't actually help here, since data.homes gets replaced by
+    a new promise, and the await helper temporarily resolves to null.
+    So the whole list is cleared before later being re-rendered. Hence,
+    no pre-existing DOM nodes to reconnect to via the key.
+  }}
+  {{#each (await data.homes) key="id" as |page|}}
+    <li>{{link-to page.title 'page' page.id}}</li>
+  {{/each}}
 </ul>

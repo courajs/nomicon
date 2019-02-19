@@ -1,5 +1,10 @@
 'use strict';
 
 module.exports = {
-  extends: 'recommended'
+  extends: 'recommended',
+
+  rules: {
+    'quotes': false,
+    'self-closing-void-elements': false,
+  },
 };
