@@ -1,1 +1,12 @@
-Sidebar
+{{#link-to 'new'}}
+  <div class="text-center my-4">
+    <button class="bg-blue hover:bg-blue-dark text-white py-2 px-4 rounded mx-auto">
+      New page
+    </button>
+  </div>
+{{/link-to}}
+<ul>
+{{#each (await allPages) as |page|}}
+  <li>{{link-to page.title 'page' page.id}}</li>
+{{/each}}
+</ul>
