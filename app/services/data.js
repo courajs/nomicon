@@ -34,10 +34,8 @@ export default Service.extend({
     let tx = db.transaction('pages', 'readwrite');
     let pages = tx.objectStore('pages');
     pages.add(page);
-    let result = promisifyTx(tx);
-
-    result.then(() => this.notifyPropertyChange('homes'));
-
+    let result = await promisifyTx(tx);
+    this.notifyPropertyChange('homes');
     return result;
   },
 
@@ -47,6 +45,23 @@ export default Service.extend({
     let pages = tx.objectStore('pages');
     return promisifyReq(pages.getAll());
   }),
+
+  async getPage(id) {
+    let db = await this.db;
+    let tx = db.transaction('pages');
+    let pages = tx.objectStore('pages');
+    return promisifyReq(pages.get(id));
+  },
+
+  async updatePage(page) {
+    let db = await this.db;
+    let tx = db.transaction('pages', 'readwrite');
+    let pages = tx.objectStore('pages');
+    pages.put(page);
+    let result = promisifyTx(tx);
+    this.notifyPropertyChange('homes');
+    return result;
+  },
 });
 
 

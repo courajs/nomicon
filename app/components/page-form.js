@@ -4,18 +4,19 @@ import {task} from 'ember-concurrency';
 
 export default Component.extend({
   data: inject(),
+  save: ()=>{},
 
   init() {
     this._super(...arguments);
     this.refs = {};
   },
 
-  submit: task(function* () {
+  _submit: function() {
     let title = this.refs.title.value;
     let body = this.refs.body.value;
 
-    this.data.addPage({id: ""+Math.random(), title, body});
-  }),
+    this.save({title, body});
+  },
 
   addRef(el, name) {
     this.refs[name] = el;
