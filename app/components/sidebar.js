@@ -4,7 +4,4 @@ import {inject} from '@ember/service';
 
 export default Component.extend({
   data: inject(),
-  allPages: computed(function() {
-    return this.data.allPages();
-  })
 });

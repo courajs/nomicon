@@ -22,44 +22,57 @@ export default Service.extend({
     }));
   },
 
-  async allPages() {
-    let db = await this.db;
-    let tx = db.transaction('pages');
-    let pages = tx.objectStore('pages');
-    return promisifyReq(pages.getAll());
-  },
-
   async addPage(page) {
-    let db = await this.db;
-    let tx = db.transaction('pages', 'readwrite');
-    let pages = tx.objectStore('pages');
-    pages.add(page);
-    let result = await promisifyTx(tx);
-    this.notifyPropertyChange('homes');
-    return result;
+    return this.basicAdd('pages', page);
   },
 
   homes: computed(async function() {
-    let db = await this.db;
-    let tx = db.transaction('pages');
-    let pages = tx.objectStore('pages');
-    return promisifyReq(pages.getAll());
+    return this.basicGetAll('pages');
   }),
 
   async getPage(id) {
-    let db = await this.db;
-    let tx = db.transaction('pages');
-    let pages = tx.objectStore('pages');
-    return promisifyReq(pages.get(id));
+    return this.basicGet('pages', id);
   },
 
   async updatePage(page) {
-    let db = await this.db;
-    let tx = db.transaction('pages', 'readwrite');
-    let pages = tx.objectStore('pages');
-    pages.put(page);
-    let result = promisifyTx(tx);
+    return this.basicUpdate('pages', page);
+  },
+
+  invalidate() {
     this.notifyPropertyChange('homes');
+  },
+
+  async basicGetAll(store) {
+    let db = await this.db;
+    let tx = db.transaction(store);
+    let objStore = tx.objectStore(store);
+    return promisifyReq(objStore.getAll());
+  },
+
+  async basicGet(store, id) {
+    let db = await this.db;
+    let tx = db.transaction(store);
+    let objStore = tx.objectStore(store);
+    return promisifyReq(objStore.get(id));
+  },
+
+  async basicAdd(store, obj) {
+    let db = await this.db;
+    let tx = db.transaction(store, 'readwrite');
+    let objStore = tx.objectStore(store);
+    objStore.add(obj);
+    let result = await promisifyTx(tx);
+    this.invalidate();
+    return result;
+  },
+
+  async basicUpdate(store, obj) {
+    let db = await this.db;
+    let tx = db.transaction(store, 'readwrite');
+    let objStore = tx.objectStore(store);
+    objStore.put(obj);
+    let result = await promisifyTx(tx);
+    this.invalidate();
     return result;
   },
 });

@@ -5,6 +5,8 @@ export default Controller.extend({
   data: inject(),
   async save(page) {
     page.id = this.model.id;
-    this.data.updatePage(page);
+    await this.data.updatePage(page);
+    let model = await this.data.getPage(this.model.id);
+    this.set('model', model);
   }
 });
