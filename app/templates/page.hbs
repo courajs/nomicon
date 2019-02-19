@@ -1,1 +1,20 @@
+<div class="flex justify-between p-4">
+  <img src="/img/incoming.svg" class="h-16 w-16"> 
+  <ul class="list-reset flex-1 px-4">
+    <li>{{link-to 'thing' 'page' 1}}</li>
+    <li>{{link-to 'thing' 'page' 1}}</li>
+    <li>{{link-to 'thing' 'page' 1}}</li>
+    <li>{{link-to 'thing' 'page' 1}}</li>
+    <li>{{link-to 'thing' 'page' 1}}</li>
+    <li>{{link-to 'thing' 'page' 1}}</li>
+    <li>{{link-to 'thing' 'page' 1}}</li>
+    <li>{{link-to 'thing' 'page' 1}}</li>
+  </ul>
+  <ul class="list-reset flex-1 px-4 text-right">
+    <li>{{link-to 'thing' 'page' 1}}</li>
+    <li>{{link-to 'thing' 'page' 1}}</li>
+    <li>{{link-to 'thing' 'page' 1}}</li>
+  </ul>
+  <img src="/img/outgoing.svg" class="h-16 w-16"> 
+</div>
 <PageForm @page={{model}} @save={{bind this.save}} />

@@ -22,10 +22,6 @@ export default Service.extend({
     }));
   },
 
-  async addPage(page) {
-    return this.basicAdd('pages', page);
-  },
-
   homes: computed(async function() {
     return this.basicGetAll('pages');
   }),
@@ -33,7 +29,9 @@ export default Service.extend({
   async getPage(id) {
     return this.basicGet('pages', id);
   },
-
+  async addPage(page) {
+    return this.basicAdd('pages', page);
+  },
   async updatePage(page) {
     return this.basicUpdate('pages', page);
   },
