@@ -27,7 +27,19 @@ export default Service.extend({
   }),
 
   async getPage(id) {
-    return this.basicGet('pages', id);
+    let db = await this.db;
+    let tx = db.transaction(['pages', 'links']);
+    let pages = tx.objectStore('pages');
+    let links = tx.objectStore('links');
+    let from = links.index('from');
+    let to = links.index('to');
+    let [p, incoming, outgoing] = await Promise.all([
+        promisifyReq(pages.get(id)),
+        promisifyReq(to.getAll(IDBKeyRange.only(id))),
+        promisifyReq(from.getAll(IDBKeyRange.only(id))),
+    ]);
+    
+    return {page: p, incoming, outgoing};
   },
   async addPage(page) {
     return this.basicAdd('pages', page);
