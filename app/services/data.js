@@ -8,7 +8,7 @@ export default Service.extend({
   init() {
     this._super(...arguments);
 
-    window.dataThing = this;
+    window.dataService = this;
 
     this.set('db', new Promise(function(resolve, reject) {
       let req = window.indexedDB.open("nomicon");

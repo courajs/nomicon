@@ -1,5 +1,6 @@
 import Controller from '@ember/controller';
 import {inject} from '@ember/service';
+import {task} from 'ember-concurrency';
 
 const
   ADD_OUT = 1,
@@ -16,12 +17,12 @@ export default Controller.extend({
   GOOUT: GO_OUT,
   GOIN: GO_IN,
 
-  async save(page) {
+  save: task(function* (page) {
     page.id = this.model.page.id;
-    await this.data.updatePage(page);
-    let model = await this.data.getPage(this.model.page.id);
+    yield this.data.updatePage(page);
+    let model = yield this.data.getPage(this.model.page.id);
     this.set('model', model);
-  },
+  }).keepLatest(),
 
   _addOutgoing() {
     this.set('showModal', ADD_OUT);

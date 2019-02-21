@@ -12,21 +12,21 @@ export default Component.extend({
     this.refs = {};
   },
 
-  _submit() {
+  _submit: task(function* () {
     let title = this.refs.title.value;
     let body = this.refs.body.value;
 
-    this.save({title, body});
-  },
+    return this.save({title, body});
+  }),
 
-  _update() {
+  _update: task(function* () {
     if (this.update) {
       let title = this.refs.title.value;
       let body = this.refs.body.value;
 
-      this.update({title, body});
+      return this.update({title, body});
     }
-  },
+  }).keepLatest(),
 
   addRef(el, name) {
     this.refs[name] = el;

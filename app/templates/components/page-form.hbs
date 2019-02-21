@@ -1,4 +1,4 @@
-<form onsubmit={{preventDefault (bind this._submit)}}>
+<form onsubmit={{preventDefault (perform this._submit)}}>
   <div class="m-4">
     <label for="title" class="block text-grey-darker text-sm mb-2">
       Title
@@ -6,7 +6,7 @@
     <input
       {{did-insert (action this.addRef) 'title'}}
       value={{@page.title}}
-      oninput={{action this._update}}
+      oninput={{perform this._update}}
       id="title"
       placeholder="Untitled"
       class="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker leading-tight focus:outline-none focus:shadow-outline" />
@@ -15,7 +15,7 @@
     <textarea
       {{did-insert (action this.addRef) 'body'}}
       value={{@page.body}}
-      oninput={{action this._update}}
+      oninput={{perform this._update}}
       placeholder="Blah blee bloop"
       rows="10"
       class="w-full shadow-inner p-4 border"

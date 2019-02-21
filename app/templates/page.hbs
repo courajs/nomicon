@@ -20,8 +20,8 @@
 </div>
 <PageForm
   @page={{model.page}}
-  @save={{bind this.save}}
-  @update={{bind this.save}}
+  @save={{perform this.save}}
+  @update={{perform this.save}}
 />
 
 {{#if showModal}}
