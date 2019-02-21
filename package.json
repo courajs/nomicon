@@ -43,6 +43,7 @@
     "ember-concurrency": "^0.8.27",
     "ember-controller-lifecycle": "^1.0.0",
     "ember-data": "~3.7.0",
+    "ember-elsewhere": "^1.0.5",
     "ember-export-application-global": "^2.0.0",
     "ember-keyboard": "^4.0.0",
     "ember-load-initializers": "^1.1.0",

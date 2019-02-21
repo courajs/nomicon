@@ -33,4 +33,5 @@ export default {
   '64': '16rem',
   'full': '100%',
   'screen': '100vh',
+  'modal': '700px',
 };

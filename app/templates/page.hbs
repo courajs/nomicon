@@ -20,7 +20,11 @@
 </div>
 <PageForm @page={{model.page}} @save={{bind this.save}} />
 
-<Typeahead
-  @choose={{action log}}
-  @options={{await data.pages}}
-/>
+{{#if showModal}}
+  <Modal @close={{bind close}}>
+    <Typeahead
+      @choose={{bind choose}}
+      @options={{await data.pages}}
+    />
+  </Modal>
+{{/if}}

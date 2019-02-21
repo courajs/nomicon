@@ -16,4 +16,5 @@
 export default {
   'full': '100%',
   'screen': '100vh',
+  'modal': '700px',
 };
