@@ -1,15 +1,15 @@
 <div class="m-4">
   <input
-    {{did-insert focusEl}}
-    oninput={{action updateSearch value="target.value"}}
+    {{did-insert this.focusEl}}
+    oninput={{action this.updateSearch value="target.value"}}
     placeholder="Search for a page..."
     class="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker leading-tight focus:outline-none focus:shadow-outline" />
   <ul class="list-reset bg-grey-lighter p-4">
-    {{#each results key="id" as |page index|}}
+    {{#each this.results key="id" as |page index|}}
       <li
-        onmouseover={{action (mut choice) index}}
-        onclick={{action choose page}}
-        class="p-1 {{if (eq index choice) "bg-grey-light"}}"
+        onmouseover={{action (mut this.choice) index}}
+        onclick={{action @choose page}}
+        class="p-1 {{if (eq index this.choice) "bg-grey-light"}}"
       >
         {{page.title}}
       </li>
