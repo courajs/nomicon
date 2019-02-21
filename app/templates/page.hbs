@@ -1,15 +1,23 @@
 <div class="flex justify-between p-4">
   <img src="/img/incoming.svg" class="h-16 w-16"> 
-  <ul class="list-reset flex-1 px-4">
-    {{#each model.incoming as |link|}}
-      <li>{{link-to link.from 'page' link.from}}</li>
-    {{/each}}
-  </ul>
-  <ul class="list-reset flex-1 px-4 text-right">
-    {{#each model.outgoing as |link|}}
-      <li>{{link-to link.to 'page' link.to}}</li>
-    {{/each}}
-  </ul>
+  <div class="flex-1 px-4">
+    <button class="w-8 h-8 mb-4 border rounded shadow active:shadow-inner active:bg-grey-lighter">+</button>
+    <ul class="list-reset">
+      {{#each model.incoming as |link|}}
+        <li>{{link-to link.from 'page' link.from}}</li>
+      {{/each}}
+    </ul>
+  </div>
+  <div class="flex-1 px-4 text-right">
+    <button onclick={{perform prompt}} class="w-8 h-8 mb-4 border rounded shadow active:shadow-inner active:bg-grey-lighter">+</button>
+    <ul class="list-reset">
+      {{#each model.outgoing as |link|}}
+        <li>{{link-to link.to 'page' link.to}}</li>
+      {{/each}}
+    </ul>
+  </div>
   <img src="/img/outgoing.svg" class="h-16 w-16"> 
 </div>
 <PageForm @page={{model.page}} @save={{bind this.save}} />
+
+<PageSelector />
