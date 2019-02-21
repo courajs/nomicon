@@ -1,21 +1,27 @@
 import Controller from '@ember/controller';
 import {inject} from '@ember/service';
-import {task} from 'ember-concurrency';
+import {task, taskGroup, waitForProperty} from 'ember-concurrency';
 
-const
-  ADD_OUT = 1,
-  ADD_IN  = 2,
-  GO_OUT  = 3,
-  GO_IN   = 4;
+const MODAL_DEFAULTS = {
+  showModal: false,
+  modalLabel: '',
+  modalOptions: [],
+  modalPath: '',
+  modalChoice: null,
+};
 
 export default Controller.extend({
   data: inject(),
-  showModal: false,
 
-  ADDOUT: ADD_OUT,
-  ADDIN: ADD_IN,
-  GOOUT: GO_OUT,
-  GOIN: GO_IN,
+  //   ...MODAL_DEFAULTS,
+  //   ^ this breaks an ESLint rule
+  //   (not FAILS it, BREAKS it -- it errors out. Not set up to
+  //   handle the spread operator apparently)
+  showModal: false,
+  modalLabel: '',
+  modalOptions: [],
+  modalPath: '',
+  modalChoice: null,
 
   save: task(function* (page) {
     let p = this.model;
@@ -24,23 +30,67 @@ export default Controller.extend({
     return p.saveAttributes();
   }).keepLatest(),
 
-  _addOutgoing() {
-    this.set('showModal', ADD_OUT);
-  },
-  _addIncoming() {
-    this.set('showModal', ADD_IN);
-  },
-  _goTo() {
-    this.set('showModal', GO_OUT);
-  },
-  _goFrom() {
-    this.set('showModal', GO_IN);
-  },
+  prompts: taskGroup().drop(),
 
+  promptAddOutgoing: task(function* () {
+    let pages = yield this.data.pages;
+    this.setProperties({
+      showModal: true,
+      modalLabel: 'Add outgoing link...',
+      modalOptions: pages,
+      modalPath: "title",
+      modalChoice: null,
+    });
+    let choice = yield waitForProperty(this, 'modalChoice');
+    yield this.model.linkTo(choice.id);
+    this.setProperties(MODAL_DEFAULTS);
+  }).group('prompts'),
+
+  promptAddIncoming: task(function* () {
+    let pages = yield this.data.pages;
+    this.setProperties({
+      showModal: true,
+      modalLabel: 'Add incoming link...',
+      modalOptions: pages,
+      modalPath: 'title',
+      modalChoice: null,
+    });
+    let choice = yield waitForProperty(this, 'modalChoice');
+    yield this.model.linkFrom(choice.id);
+    this.setProperties(MODAL_DEFAULTS);
+  }).group('prompts'),
+
+  promptGoTo: task(function* () {
+    this.setProperties({
+      showModal: true,
+      modalLabel: 'Go to...',
+      modalOptions: this.model.outgoing,
+      modalPath: 'to.title',
+      modalChoice: null,
+    });
+    let choice = yield waitForProperty(this, 'modalChoice');
+    this.setProperties(MODAL_DEFAULTS);
+    return this.transitionToRoute('page', choice.to.id);
+  }).group('prompts'),
+
+  promptGoFrom: task(function* () {
+    this.setProperties({
+      showModal: true,
+      modalLabel: 'Go to...',
+      modalOptions: this.model.incoming,
+      modalPath: 'from.title',
+      modalChoice: null,
+    });
+    let choice = yield waitForProperty(this, 'modalChoice');
+    this.setProperties(MODAL_DEFAULTS);
+    return this.transitionToRoute('page', choice.from.id);
+  }).group('prompts'),
 
   close() {
-    this.set('showModal', false);
+    this.prompts.cancelAll();
+    this.setProperties(MODAL_DEFAULTS);
   },
+
   choose(choice) {
     switch (this.showModal) {
       case ADD_OUT:
