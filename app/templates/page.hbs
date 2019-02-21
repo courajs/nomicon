@@ -18,7 +18,11 @@
   </div>
   <img src="/img/outgoing.svg" class="h-16 w-16"> 
 </div>
-<PageForm @page={{model.page}} @save={{bind this.save}} />
+<PageForm
+  @page={{model.page}}
+  @save={{bind this.save}}
+  @update={{bind this.save}}
+/>
 
 {{#if showModal}}
   <Modal @close={{bind close}}>
