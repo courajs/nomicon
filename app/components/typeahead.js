@@ -1,5 +1,5 @@
 import Component from '@ember/component';
-import {computed} from '@ember/object';
+import {get, computed} from '@ember/object';
 import {or} from '@ember/object/computed';
 import {inject} from '@ember/service';
 import {on} from '@ember/object/evented';
@@ -8,6 +8,7 @@ import {EKMixin, keyDown} from 'ember-keyboard';
 
 export default Component.extend(EKMixin, {
   choice: 0,
+  path: '',
   search: '',
   empty: [],
   all: or('options', 'empty'),
@@ -20,9 +21,15 @@ export default Component.extend(EKMixin, {
 
   results: computed('search', 'all', function() {
     let search = this.search.split(' ');
-    return this.all.filter(function(page) {
-      let title = page.title.toLowerCase();
-      return containsForward(title, search);
+    return this.all.filter((item) => {
+      let searchVal;
+      if (this.path) {
+        // @path can be a 'dot.separated.string';
+        searchVal = get(item, this.path).toLowerCase();
+      } else {
+        searchVal = item.toLowerCase();
+      }
+      return containsForward(searchVal, search);
     });
   }),
 

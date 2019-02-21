@@ -1,25 +1,25 @@
 <div class="flex justify-between p-4">
   <img src="/img/incoming.svg" class="h-16 w-16"> 
   <div class="flex-1 px-4">
-    <button onclick={{action (mut showModal) 'in'}} class="w-8 h-8 mb-4 border rounded shadow active:shadow-inner active:bg-grey-lighter">+</button>
+    <button onclick={{action (mut showModal) this.ADDIN}} class="w-8 h-8 mb-4 border rounded shadow active:shadow-inner active:bg-grey-lighter">+</button>
     <ul class="list-reset">
       {{#each model.incoming as |link|}}
-        <li>{{link-to link.from 'page' link.from}}</li>
+        <li>{{link-to link.from.title 'page' link.from.id}}</li>
       {{/each}}
     </ul>
   </div>
   <div class="flex-1 px-4 text-right">
-    <button onclick={{action (mut showModal) 'out'}} class="w-8 h-8 mb-4 border rounded shadow active:shadow-inner active:bg-grey-lighter">+</button>
+    <button onclick={{action (mut showModal) this.ADDOUT}} class="w-8 h-8 mb-4 border rounded shadow active:shadow-inner active:bg-grey-lighter">+</button>
     <ul class="list-reset">
       {{#each model.outgoing as |link|}}
-        <li>{{link-to link.to 'page' link.to}}</li>
+        <li>{{link-to link.to.title 'page' link.to.id}}</li>
       {{/each}}
     </ul>
   </div>
   <img src="/img/outgoing.svg" class="h-16 w-16"> 
 </div>
 <PageForm
-  @page={{model.page}}
+  @page={{this.model}}
   @save={{perform this.save}}
   @update={{perform this.save}}
 />
@@ -29,6 +29,7 @@
     <Typeahead
       @choose={{bind choose}}
       @options={{await data.pages}}
+      @path="title"
     />
   </Modal>
 {{/if}}

@@ -18,10 +18,10 @@ export default Controller.extend({
   GOIN: GO_IN,
 
   save: task(function* (page) {
-    page.id = this.model.page.id;
-    yield this.data.updatePage(page);
-    let model = yield this.data.getPage(this.model.page.id);
-    this.set('model', model);
+    let p = this.model;
+    p.set('title', page.title);
+    p.set('body', page.body);
+    return p.saveAttributes();
   }).keepLatest(),
 
   _addOutgoing() {
@@ -44,9 +44,7 @@ export default Controller.extend({
   choose(choice) {
     switch (this.showModal) {
       case ADD_OUT:
-        let edge = {id: Math.random(), from: this.model.page.id, to: choice.id};
-        this.data.basicAdd('links', edge);
-        this.model.outgoing.pushObject(edge);
+        this.model.linkTo(choice.id);
         break;
       case ADD_IN:
         edge = {id: Math.random(), to: this.model.page.id, from: choice.id};
