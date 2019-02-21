@@ -20,6 +20,7 @@
 </div>
 <PageForm @page={{model.page}} @save={{bind this.save}} />
 
-<PageSelector
+<Typeahead
   @choose={{action log}}
+  @options={{await data.pages}}
 />

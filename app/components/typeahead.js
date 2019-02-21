@@ -1,26 +1,24 @@
 import Component from '@ember/component';
 import {computed} from '@ember/object';
+import {or} from '@ember/object/computed';
 import {inject} from '@ember/service';
-import { on } from '@ember/object/evented';
+import {on} from '@ember/object/evented';
 
-import { EKMixin, keyDown } from 'ember-keyboard';
+import {EKMixin, keyDown} from 'ember-keyboard';
 
 export default Component.extend(EKMixin, {
-  data: inject(),
   choice: 0,
   search: '',
-  all: [],
+  empty: [],
+  all: or('options', 'empty'),
   choose() {},
 
   init() {
     this._super(...arguments);
     this.set('keyboardActivated', true);
-    this.data.basicGetAll('pages').then(pages => {
-      this.set('all', pages);
-    });
   },
 
-  options: computed('search', 'all', function() {
+  results: computed('search', 'all', function() {
     let search = this.search.split(' ');
     return this.all.filter(function(page) {
       let title = page.title.toLowerCase();
@@ -42,10 +40,10 @@ export default Component.extend(EKMixin, {
     this.set('choice', Math.max(0,  this.choice - 1));
   }),
   _curosrDown: on(...['ArrowDown', 'cmd+KeyJ', 'ctrl+KeyJ'].map(keyDown), function() {
-    this.set('choice', Math.min(this.options.length-1, this.choice + 1));
+    this.set('choice', Math.min(this.results.length-1, this.choice + 1));
   }),
   _choose: on(keyDown('Enter'), function() {
-    this.choose(this.options[this.choice]);
+    this.choose(this.results[this.choice]);
   }),
 });
 

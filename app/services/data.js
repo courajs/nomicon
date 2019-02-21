@@ -22,8 +22,11 @@ export default Service.extend({
     }));
   },
 
-  homes: computed(async function() {
+  pages: computed(async function() {
     return this.basicGetAll('pages');
+  }),
+  homes: computed(async function() {
+    return this.pages;
   }),
 
   async getPage(id) {
@@ -50,6 +53,7 @@ export default Service.extend({
 
   invalidate() {
     this.notifyPropertyChange('homes');
+    this.notifyPropertyChange('pages');
   },
 
   async basicGetAll(store) {
