@@ -1,5 +1,8 @@
 import Service from '@ember/service';
 import {computed} from '@ember/object';
+import {alias} from '@ember/object/computed';
+
+import {task} from 'ember-concurrency';
 
 export default Service.extend({
   init() {
@@ -20,14 +23,12 @@ export default Service.extend({
         links.createIndex("to", "to", { unique: false });
       }
     }));
+
+    this.updateProps.perform();
   },
 
-  pages: computed(async function() {
-    return this.basicGetAll('pages');
-  }),
-  homes: computed(async function() {
-    return this.pages;
-  }),
+  pages: alias('updateProps.lastSuccessful.value'),
+  homes: alias('pages'),
 
   async getPage(id) {
     let db = await this.db;
@@ -51,9 +52,11 @@ export default Service.extend({
     return this.basicUpdate('pages', page);
   },
 
+  updateProps: task(function* () {
+    return this.basicGetAll('pages');
+  }).keepLatest(),
   invalidate() {
-    this.notifyPropertyChange('homes');
-    this.notifyPropertyChange('pages');
+    this.updateProps.perform();
   },
 
   async basicGetAll(store) {
