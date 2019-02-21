@@ -20,4 +20,6 @@
 </div>
 <PageForm @page={{model.page}} @save={{bind this.save}} />
 
-<PageSelector />
+<PageSelector
+  @choose={{action log}}
+/>

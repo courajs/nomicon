@@ -9,4 +9,5 @@ export default Controller.extend({
     let model = await this.data.getPage(this.model.page.id);
     this.set('model', model);
   },
+  log: console.log,
 });
