@@ -5,3 +5,19 @@
   </div>
   {{from-elsewhere name="modal-outlet"}}
 </div>
+
+{{#if this.showModal}}
+  <Modal @close={{action (mut this.showModal) false}}>
+    <Typeahead
+      @choose={{bind this.goToPage}}
+      @options={{this.data.pages}}
+      @path="title"
+      @placeholder="Go to page..."
+    />
+  </Modal>
+{{/if}}
+
+<Hotkeys
+  @priority=0
+  @handlers={{this.hotkeys}}
+/>

@@ -1,10 +1,8 @@
 import Service from '@ember/service';
-import {computed} from '@ember/object';
 import {alias} from '@ember/object/computed';
 
 import {task} from 'ember-concurrency';
 
-import {promisifyReq, promisifyTx} from 'nomicon/lib/idb_utils';
 import {makeStore} from 'nomicon/lib/models';
 
 export default Service.extend({

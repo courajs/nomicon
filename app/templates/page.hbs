@@ -18,6 +18,7 @@
   </div>
   <img src="/img/outgoing.svg" class="h-16 w-16"> 
 </div>
+
 <PageForm
   @page={{this.model}}
   @save={{perform this.save}}
@@ -35,11 +36,9 @@
   </Modal>
 {{/if}}
 
-<PageHotkeys
-  @addOut={{perform this.promptAddOutgoing}}
-  @addIn={{perform this.promptAddIncoming}}
-  @goOut={{perform this.promptGoTo}}
-  @goIn={{perform this.promptGoFrom}}
+<Hotkeys
+  @priority=1
+  @handlers={{this.hotkeys}}
 />
 
 <br>

@@ -2,6 +2,8 @@ import Controller from '@ember/controller';
 import {inject} from '@ember/service';
 import {task, taskGroup, waitForProperty} from 'ember-concurrency';
 
+import {bound} from 'nomicon/lib/hotkeys';
+
 const MODAL_DEFAULTS = {
   showModal: false,
   modalLabel: '',
@@ -35,6 +37,21 @@ export default Controller.extend({
     yield this.data.destroyPage(page.id);
     yield this.transitionToRoute('new');
     m.destroy();
+  }),
+
+  hotkeys: bound({
+    'add-outgoing-link': function() {
+      this.promptAddOutgoing.perform();
+    },
+    'add-incoming-link': function() {
+      this.promptAddIncoming.perform();
+    },
+    'follow-outgoing-link': function() {
+      this.promptGoTo.perform();
+    },
+    'follow-incoming-link': function() {
+      this.promptGoFrom.perform();
+    },
   }),
 
   prompts: taskGroup().drop(),
@@ -96,27 +113,5 @@ export default Controller.extend({
   close() {
     this.prompts.cancelAll();
     this.setProperties(MODAL_DEFAULTS);
-  },
-
-  choose(choice) {
-    switch (this.showModal) {
-      case ADD_OUT:
-        this.model.linkTo(choice.id);
-        break;
-      case ADD_IN:
-        edge = {id: Math.random(), to: this.model.page.id, from: choice.id};
-        this.data.basicAdd('links', edge);
-        this.model.incoming.pushObject(edge);
-        break;
-      case GO_OUT:
-        this.transitionToRoute('page', choice.id);
-        break;
-      case GO_IN:
-        this.transitionToRoute('page', choice.id);
-        break;
-      default:
-        throw new Error('ahh');
-    }
-    this.set('showModal', false);
   },
 });

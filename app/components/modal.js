@@ -1,17 +1,14 @@
 import Component from '@ember/component';
-import {on} from '@ember/object/evented';
 
-import {EKMixin, keyDown} from 'ember-keyboard';
+import {bound} from 'nomicon/lib/hotkeys';
 
-export default Component.extend(EKMixin, {
+export default Component.extend({
+  keyboardActivated: true,
   close() {},
 
-  init() {
-    this._super(...arguments);
-    this.set('keyboardActivated', true);
-  },
-
-  _clickBackdrop: on(keyDown('Escape'), function() {
-    this.close();
+  hotkeys: bound({
+    'close-modal': function() {
+      this.close();
+    }
   }),
 });
