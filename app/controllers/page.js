@@ -30,6 +30,13 @@ export default Controller.extend({
     return p.saveAttributes();
   }).keepLatest(),
 
+  destroyPage: task(function* (page) {
+    let m = this.model;
+    yield this.data.destroyPage(page.id);
+    yield this.transitionToRoute('new');
+    m.destroy();
+  }),
+
   prompts: taskGroup().drop(),
 
   promptAddOutgoing: task(function* () {

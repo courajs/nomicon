@@ -54,6 +54,32 @@ export const Store = EmberObject.extend({
     return p;
   },
 
+  async destroyPage(id) {
+    let tx = this.db.transaction(['pages', 'links'], 'readwrite');
+    // delete the persisted page
+    tx.objectStore('pages').delete(id);
+
+    // delete the persisted page
+    let links = tx.objectStore('links');
+    let from = promisifyReq(links.index('from').getAll(IDBKeyRange.only(id)));
+    let to = promisifyReq(links.index('to').getAll(IDBKeyRange.only(id)));
+    [from, to] = await Promise.all([from, to]);
+    for (let l of from) {
+      links.delete(l.id);
+    }
+    for (let l of to) {
+      links.delete(l.id);
+    }
+
+    // remove in-memory page and links from the graph
+    let p = this._map.get(id);
+    p.incoming.forEach((l) => l.from.outgoing.removeObject(l));
+    p.outgoing.forEach((l) => l.to.incoming.removeObject(l));
+    this._map.delete(id);
+
+    return promisifyTx(tx);
+  },
+
   async insertLink(fromId, toId) {
     let from = this._map.get(fromId);
     let to = this._map.get(toId);
@@ -146,5 +172,14 @@ export const Page = EmberObject.extend({
       title: this.title,
       body: this.body,
     };
+  },
+
+  // When we remove a page from the graph, we remove all references to its links
+  // on the other side, but leave them on the now-orphaned page. So then when the
+  // page is later destroyed, it can also destroy all its dangling links.
+  willDestroy() {
+    this.incoming.forEach(l => l.destroy());
+    this.outgoing.forEach(l => l.destroy());
+    this._super(...arguments);
   },
 });

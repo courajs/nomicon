@@ -32,6 +32,13 @@ export default Service.extend({
     return p;
   },
 
+  async destroyPage(id) {
+    await this.ready;
+    let p = await this.store.destroyPage(id);
+    this.invalidate();
+    return p;
+  },
+
   updateProps: task(function* () {
     yield this.ready;
     return this.store.allPages();
