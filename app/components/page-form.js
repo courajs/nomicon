@@ -12,13 +12,6 @@ export default Component.extend({
     this.refs = {};
   },
 
-  _submit: task(function* () {
-    let title = this.refs.title.value;
-    let body = this.refs.body.value;
-
-    return this.save({title, body});
-  }),
-
   _update: task(function* () {
     if (this.update) {
       let title = this.refs.title.value;
@@ -28,7 +21,20 @@ export default Component.extend({
     }
   }).keepLatest(),
 
+  didReceiveAttrs() {
+    if (!this.page.title && this.refs.title) {
+      this.refs.title.focus();
+    } else if (this.page.title && this.refs.body) {
+      this.refs.body.focus();
+    }
+  },
+
   addRef(el, name) {
     this.refs[name] = el;
+    if (!this.page.title && name == 'title') {
+      el.focus();
+    } else if (this.page.title && name == 'body') {
+      el.focus();
+    }
   }
 });

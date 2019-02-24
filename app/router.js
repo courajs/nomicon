@@ -7,6 +7,7 @@ const Router = EmberRouter.extend({
 });
 
 Router.map(function() {
+  this.route('home');
   this.route('new');
   this.route('page', { path: '/page/:page_id' });
 });

@@ -35,7 +35,7 @@ export default Controller.extend({
   destroyPage: task(function* (page) {
     let m = this.model;
     yield this.data.destroyPage(page.id);
-    yield this.transitionToRoute('new');
+    yield this.transitionToRoute('home');
     m.destroy();
   }),
 
