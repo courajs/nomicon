@@ -80,6 +80,17 @@ export const Store = EmberObject.extend({
     return promisifyTx(tx);
   },
 
+  async destroyLink(link) {
+    let tx = this.db.transaction(['links'], 'readwrite');
+    tx.objectStore('links').delete(link.id);
+
+    link.from.outgoing.removeObject(link);
+    link.to.incoming.removeObject(link);
+    link.destroy();
+
+    return promisifyTx(tx);
+  },
+
   async insertLink(fromId, toId) {
     let from = this._map.get(fromId);
     let to = this._map.get(toId);

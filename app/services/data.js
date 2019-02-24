@@ -39,6 +39,11 @@ export default Service.extend({
     return p;
   },
 
+  async destroyLink(link) {
+    await this.ready;
+    return this.store.destroyLink(link);
+  },
+
   updateProps: task(function* () {
     yield this.ready;
     return this.store.allPages();
