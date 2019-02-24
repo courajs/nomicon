@@ -26,10 +26,11 @@
 {{#if showModal}}
   <Modal @close={{bind this.close}}>
     <Typeahead
-      @choose={{action (mut this.modalChoice)}}
+      @choose={{bind this._modalChoice}}
       @options={{this.modalOptions}}
       @path={{this.modalPath}}
       @placeholder={{this.modalLabel}}
+      @showCreateOption={{this.modalShowCreateOption}}
     />
   </Modal>
 {{/if}}

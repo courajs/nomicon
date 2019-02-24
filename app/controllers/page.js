@@ -3,6 +3,7 @@ import {inject} from '@ember/service';
 import {task, taskGroup, waitForProperty} from 'ember-concurrency';
 
 import {bound} from 'nomicon/lib/hotkeys';
+import {CREATE} from 'nomicon/lib/typeahead';
 
 const MODAL_DEFAULTS = {
   showModal: false,
@@ -10,6 +11,8 @@ const MODAL_DEFAULTS = {
   modalOptions: [],
   modalPath: '',
   modalChoice: null,
+  modalShowCreateOption: false,
+  modalSearchText: '',
 };
 
 export default Controller.extend({
@@ -24,6 +27,8 @@ export default Controller.extend({
   modalOptions: [],
   modalPath: '',
   modalChoice: null,
+  modalShowCreateOption: false,
+  modalSearchText: '',
 
   destroyPage: task(function* (page) {
     let m = this.model;
@@ -47,6 +52,11 @@ export default Controller.extend({
     },
   }),
 
+  _modalChoice(choice, searchText) {
+    this.set('modalChoice', choice);
+    this.set('modalSearchText', searchText);
+  },
+
   prompts: taskGroup().drop(),
 
   promptAddOutgoing: task(function* () {
@@ -68,9 +78,15 @@ export default Controller.extend({
       modalLabel: 'Add outgoing link...',
       modalOptions: pages,
       modalPath: "title",
-      modalChoice: null,
+      modalShowCreateOption: true,
     });
     let choice = yield waitForProperty(this, 'modalChoice');
+    if (choice === CREATE) {
+      let page = yield this.data.newPage({title: this.modalSearchText});
+      yield this.model.linkTo(page.id);
+      this.setProperties(MODAL_DEFAULTS);
+      return this.transitionToRoute('page', page.id);
+    }
     yield this.model.linkTo(choice.id);
     this.setProperties(MODAL_DEFAULTS);
   }).group('prompts'),
@@ -94,9 +110,15 @@ export default Controller.extend({
       modalLabel: 'Add incoming link...',
       modalOptions: pages,
       modalPath: 'title',
-      modalChoice: null,
+      modalShowCreateOption: true,
     });
     let choice = yield waitForProperty(this, 'modalChoice');
+    if (choice === CREATE) {
+      let page = yield this.data.newPage({title: this.modalSearchText});
+      yield this.model.linkFrom(page.id);
+      this.setProperties(MODAL_DEFAULTS);
+      return this.transitionToRoute('page', page.id);
+    }
     yield this.model.linkFrom(choice.id);
     this.setProperties(MODAL_DEFAULTS);
   }).group('prompts'),
@@ -107,7 +129,6 @@ export default Controller.extend({
       modalLabel: 'Go to...',
       modalOptions: this.model.outgoing,
       modalPath: 'to.title',
-      modalChoice: null,
     });
     let choice = yield waitForProperty(this, 'modalChoice');
     this.setProperties(MODAL_DEFAULTS);
@@ -120,7 +141,6 @@ export default Controller.extend({
       modalLabel: 'Go to...',
       modalOptions: this.model.incoming,
       modalPath: 'from.title',
-      modalChoice: null,
     });
     let choice = yield waitForProperty(this, 'modalChoice');
     this.setProperties(MODAL_DEFAULTS);

@@ -3,8 +3,10 @@ import {get, computed} from '@ember/object';
 import {or} from '@ember/object/computed';
 
 import {bound} from 'nomicon/lib/hotkeys';
+import {CREATE} from 'nomicon/lib/typeahead';
 
 export default Component.extend({
+  CREATE,
   choice: 0,
   path: '',
   search: '',
@@ -19,7 +21,7 @@ export default Component.extend({
 
   results: computed('search', 'all', function() {
     let search = this.search.split(' ');
-    return this.all.filter((item) => {
+    let options = this.all.filter((item) => {
       let searchVal;
       if (this.path) {
         // @path can be a 'dot.separated.string';
@@ -29,6 +31,11 @@ export default Component.extend({
       }
       return containsForward(searchVal, search);
     });
+
+    if (this.showCreateOption && this.search) {
+      options.push(CREATE);
+    }
+    return options;
   }),
 
   updateSearch(newTerm) {
@@ -48,7 +55,7 @@ export default Component.extend({
       this.set('choice', Math.min(this.results.length-1, this.choice + 1));
     },
     'typeahead-confirm': function() {
-      this.choose(this.results[this.choice]);
+      this.choose(this.results[this.choice], this.search);
     },
   }),
 });
