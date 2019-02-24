@@ -18,8 +18,9 @@ export default Component.extend(EKMixin, {
       } else {
         DEFS[key].forEach((event) => {
           this.on(event, function(e, emberKeyboardEvent) {
-            this.handlers[key]();
             emberKeyboardEvent.stopImmediatePropagation();
+            e.preventDefault();
+            this.handlers[key]();
           });
         });
       }
