@@ -13,6 +13,7 @@ export default Component.extend({
   update: task(function* () {
     this.page.set('title', this.refs.title.value);
     this.page.set('body', this.refs.body.value);
+    this.page.set('home', this.refs.home.checked);
 
     return this.page.saveAttributes();
   }).keepLatest(),

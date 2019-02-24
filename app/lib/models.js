@@ -40,12 +40,11 @@ export const Store = EmberObject.extend({
     return Array.from(this._map.values());
   },
 
-  async newPage({title, body}) {
+  async newPage(attrs) {
     let p = Page.create({
       id: ''+Math.random(),
-      title,
-      body,
       store: this,
+      ...attrs
     });
     this._map.set(p.id, p);
     let tx = this.db.transaction('pages', 'readwrite');
@@ -102,10 +101,8 @@ export const Store = EmberObject.extend({
     let allPages = await promisifyReq(tx.objectStore('pages').getAll());
     for (let p of allPages) {
       this._map.set(p.id, Page.create({
-        id: p.id,
-        title: p.title,
-        body: p.body,
         store: this,
+        ...p
       }));
     }
 
@@ -171,6 +168,7 @@ export const Page = EmberObject.extend({
       id: this.id,
       title: this.title,
       body: this.body,
+      home: this.home,
     };
   },
 

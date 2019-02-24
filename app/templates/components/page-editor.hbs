@@ -1,4 +1,13 @@
 <div class="m-4">
+  <label class="block text-grey-darker text-sm mb-2">
+    <input
+      type=checkbox
+      checked={{@page.home}}
+      {{did-insert (action this.addRef) 'home'}}
+      oninput={{perform this.update}}
+    />
+    Homepage?
+  </label>
   <label for="title" class="block text-grey-darker text-sm mb-2">
     Title
   </label>

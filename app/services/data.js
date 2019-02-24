@@ -23,9 +23,9 @@ export default Service.extend({
     await this.ready;
     return this.store.getPage(id);
   },
-  async newPage({title, body}) {
+  async newPage(attrs) {
     await this.ready;
-    let p = await this.store.newPage({title, body});
+    let p = await this.store.newPage(attrs);
     this.invalidate();
     return p;
   },
