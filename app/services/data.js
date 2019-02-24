@@ -19,6 +19,7 @@ export default Service.extend({
   pages: alias('updateProps.lastSuccessful.value'),
   homes: filter('pages.@each.home', page => page.home),
   orphans: filter('pages.@each.numPeers', page => !page.home && page.numPeers === 0),
+  stubs: filter('pages.@each.stub', page => page.stub),
 
   async getPage(id) {
     await this.ready;
