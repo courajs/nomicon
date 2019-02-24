@@ -25,13 +25,6 @@ export default Controller.extend({
   modalPath: '',
   modalChoice: null,
 
-  save: task(function* (page) {
-    let p = this.model;
-    p.set('title', page.title);
-    p.set('body', page.body);
-    return p.saveAttributes();
-  }).keepLatest(),
-
   destroyPage: task(function* (page) {
     let m = this.model;
     yield this.data.destroyPage(page.id);

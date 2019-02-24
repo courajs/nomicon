@@ -4,21 +4,17 @@ import {task} from 'ember-concurrency';
 
 export default Component.extend({
   data: inject(),
-  save() {},
-  update: null,
 
   init() {
     this._super(...arguments);
     this.refs = {};
   },
 
-  _update: task(function* () {
-    if (this.update) {
-      let title = this.refs.title.value;
-      let body = this.refs.body.value;
+  update: task(function* () {
+    this.page.set('title', this.refs.title.value);
+    this.page.set('body', this.refs.body.value);
 
-      return this.update({title, body});
-    }
+    return this.page.saveAttributes();
   }).keepLatest(),
 
   didReceiveAttrs() {
@@ -28,6 +24,8 @@ export default Component.extend({
       this.refs.body.focus();
     }
   },
+
+  log: console.log,
 
   addRef(el, name) {
     this.refs[name] = el;
