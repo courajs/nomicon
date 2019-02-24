@@ -1,5 +1,5 @@
 import Service from '@ember/service';
-import {alias} from '@ember/object/computed';
+import {alias, filter} from '@ember/object/computed';
 
 import {task} from 'ember-concurrency';
 
@@ -17,7 +17,8 @@ export default Service.extend({
   },
 
   pages: alias('updateProps.lastSuccessful.value'),
-  homes: alias('pages'),
+  homes: filter('pages.@each.home', page => page.home),
+  orphans: filter('pages.@each.numPeers', page => !page.home && page.numPeers === 0),
 
   async getPage(id) {
     await this.ready;

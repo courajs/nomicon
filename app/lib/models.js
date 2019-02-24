@@ -1,4 +1,5 @@
-import EmberObject from '@ember/object';
+import EmberObject, {computed} from '@ember/object';
+import {not} from '@ember/object/computed';
 
 import {promisifyReq, promisifyTx} from 'nomicon/lib/idb_utils';
 
@@ -149,6 +150,11 @@ export const Page = EmberObject.extend({
     this.incoming = [];
     this.outgoing = [];
   },
+
+  numPeers: computed('{incoming,outgoing}.[]', function() {
+    return this.incoming.length + this.outgoing.length;
+  }),
+  stub: not('body'),
 
   async linkTo(otherId) {
     return this.store.insertLink(this.id, otherId);
