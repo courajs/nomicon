@@ -51,6 +51,18 @@ export default Controller.extend({
 
   promptAddOutgoing: task(function* () {
     let pages = yield this.data.pages;
+    pages = pages.filter(other => {
+      if (other === this.model) {
+        return false;
+      }
+      for (let l of this.model.outgoing) {
+        if (other === l.to) {
+          return false;
+        }
+      }
+      return true;
+    });
+
     this.setProperties({
       showModal: true,
       modalLabel: 'Add outgoing link...',
@@ -65,6 +77,18 @@ export default Controller.extend({
 
   promptAddIncoming: task(function* () {
     let pages = yield this.data.pages;
+    pages = pages.filter(other => {
+      if (other === this.model) {
+        return false;
+      }
+      for (let l of this.model.incoming) {
+        if (other === l.from) {
+          return false;
+        }
+      }
+      return true;
+    });
+
     this.setProperties({
       showModal: true,
       modalLabel: 'Add incoming link...',
