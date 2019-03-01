@@ -5,9 +5,15 @@
   </div>
   {{from-elsewhere name="modal-outlet"}}
 
-  <div class="fixed pin-t w-24 bg-red-lighter text-center" style="left: 50%">
-    Dev
-  </div>
+  {{#if (eq this.environment 'production')}}
+    <div class="fixed pin-t w-24 bg-blue-lighter text-center" style="left: 50%">
+      {{this.environment}}
+    </div>
+  {{else}}
+    <div class="fixed pin-t w-24 bg-red-lighter text-center" style="left: 50%">
+      {{this.environment}}
+    </div>
+  {{/if}}
 </div>
 
 {{#if this.showModal}}
