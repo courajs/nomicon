@@ -11,6 +11,9 @@ export default Controller.extend({
   hotkeys: bound({
     'page-switcher': function() {
       this.set('showModal', true);
+    },
+    'new-page': function() {
+      this.transitionToRoute('new');
     }
   }),
 

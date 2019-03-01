@@ -41,6 +41,8 @@ const DEFS = {
   'add-incoming-link': ['ctrl+Comma'],
   'follow-outgoing-link': ['ctrl+BracketRight'],
   'follow-incoming-link': ['ctrl+BracketLeft'],
+
+  'new-page': ['ctrl+KeyM'],
 }
 
 for (let key in DEFS) {
