@@ -1,6 +1,9 @@
 import EmberObject, {computed} from '@ember/object';
 import {not} from '@ember/object/computed';
 
+import uuid from 'uuid/v4';
+
+import Site from './site';
 import {promisifyReq, promisifyTx} from 'nomicon/lib/idb_utils';
 
 export async function makeStore() {
@@ -18,18 +21,23 @@ export async function makeStore() {
     }
   });
 
-  let store = Store.create({db});
+  let store = Store.create({db, site: Site.load()});
   await store.ready;
   return store;
 }
 
 export const Store = EmberObject.extend({
   db: null,
+  site: null,
   _map: null,
 
   init() {
     this._super(...arguments);
     this.ready = this._buildIdentityMap();
+  },
+
+  nextId() {
+    return this.site.nextId();
   },
 
   getPage(id) {
@@ -43,13 +51,13 @@ export const Store = EmberObject.extend({
 
   async newPage(attrs) {
     let p = Page.create({
-      id: ''+Math.random(),
+      id: uuid(),
       store: this,
-      ...attrs
     });
     this._map.set(p.id, p);
     let tx = this.db.transaction('pages', 'readwrite');
     tx.objectStore('pages').add(p.serialize());
+    debugger;
     await promisifyTx(tx);
     return p;
   },
@@ -151,15 +159,55 @@ export const Link = EmberObject.extend({
 
 export const Page = EmberObject.extend({
   store: null,
+
+  // These are stored directly in IndexedDB
   id: '',
-  title: '',
-  body: '',
+  home: false,
+  atoms: [],
+
+  // These are assigned by the store in _buildIdentityMap
   incoming: [],
   outgoing: [],
+
   init() {
     this._super(...arguments);
     this.incoming = [];
     this.outgoing = [];
+
+    if (this.atoms.length === 0) {
+      this.atoms.pushObject(this.newAtom('', ''));
+    }
+  },
+
+  title: computed('atoms.[]', {
+    get(key) {
+      return this.atoms[this.atoms.length-1].title;
+    },
+    set(key, val) {
+      if (val !== this.title) {
+        this.atoms.push(this.newAtom(val, this.body));
+      }
+      return val;
+    }
+  }),
+  body: computed('atoms.[]', {
+    get(key) {
+      return this.atoms[this.atoms.length-1].body;
+    },
+    set(key, val) {
+      if (val !== this.body) {
+        this.atoms.push(this.newAtom(this.title, val));
+      }
+      return val;
+    }
+  }),
+
+  newAtom(title, body) {
+    return {
+      id: this.store.nextId(),
+      title,
+      body,
+    };
   },
 
   numPeers: computed('{incoming,outgoing}.[]', function() {
@@ -183,9 +231,8 @@ export const Page = EmberObject.extend({
   serialize() {
     return {
       id: this.id,
-      title: this.title,
-      body: this.body,
       home: this.home,
+      atoms: this.atoms.slice(-1),
     };
   },
 
