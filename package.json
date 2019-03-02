@@ -23,6 +23,7 @@
     "@ember/render-modifiers": "^1.0.0",
     "broccoli-asset-rev": "^2.7.0",
     "ember-ajax": "^3.1.0",
+    "ember-auto-import": "^1.2.21",
     "ember-awesome-macros": "^4.0.0",
     "ember-bind-helper": "^0.3.2",
     "ember-cli": "~3.7.1",
@@ -58,7 +59,8 @@
     "ember-truth-helpers": "^2.1.0",
     "eslint-plugin-ember": "^5.2.0",
     "loader.js": "^4.7.0",
-    "qunit-dom": "^0.8.0"
+    "qunit-dom": "^0.8.0",
+    "uuid": "^3.3.2"
   },
   "engines": {
     "node": "6.* || 8.* || >= 10.*"
