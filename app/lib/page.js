@@ -1,6 +1,9 @@
 import EmberObject, {computed} from '@ember/object';
 import {not} from '@ember/object/computed';
 
+import {promisifyTx} from 'nomicon/lib/idb_utils';
+import Atom from './atom';
+
 export default EmberObject.extend({
   store: null,
 
@@ -25,7 +28,7 @@ export default EmberObject.extend({
 
   title: computed('atoms.[]', {
     get(key) {
-      return this.atoms[this.atoms.length-1].title;
+      return this.atoms[this.atoms.length-1].value.title;
     },
     set(key, val) {
       if (val !== this.title) {
@@ -36,7 +39,7 @@ export default EmberObject.extend({
   }),
   body: computed('atoms.[]', {
     get(key) {
-      return this.atoms[this.atoms.length-1].body;
+      return this.atoms[this.atoms.length-1].value.body;
     },
     set(key, val) {
       if (val !== this.body) {
@@ -47,11 +50,14 @@ export default EmberObject.extend({
   }),
 
   newAtom(title, body) {
-    return {
+    return new Atom({
       id: this.store.nextId(),
-      title,
-      body,
-    };
+      objectType: 'page',
+      objectId: this.id,
+      type: 'write',
+      parent: null,
+      value: {title, body},
+    });
   },
 
   numPeers: computed('{incoming,outgoing}.[]', function() {
