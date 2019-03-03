@@ -10,54 +10,105 @@ export default EmberObject.extend({
   // These are stored directly in IndexedDB
   id: '',
   home: false,
-  atoms: [],
+  homeCollectionId: '',
+  titleCollectionId: '',
+  bodyCollectionId: '',
 
-  // These are assigned by the store in _buildIdentityMap
+  // These are assigned by the store in _buildIdentityMap,
+  // as Link objects
   incoming: [],
   outgoing: [],
+
+  // These are populated by the store in _buildIdentityMap
+  homeAtoms: [],
+  titleAtoms: [],
+  bodyAtoms: [],
 
   init() {
     this._super(...arguments);
     this.incoming = [];
     this.outgoing = [];
-
-    if (this.atoms.length === 0) {
-      this.atoms.pushObject(this.newAtom('', ''));
-    }
+    this.homeAtoms = [];
+    this.titleAtoms = [];
+    this.bodyAtoms = [];
   },
 
-  title: computed('atoms.[]', {
+  home: computed('homeAtoms.[]', {
     get(key) {
-      return this.atoms[this.atoms.length-1].value.title;
+      if (this.homeAtoms.length) {
+        return this.homeAtoms[this.homeAtoms.length-1].value;
+      }
+      else return '';
+    },
+    set(key, val) {
+      if (val !== this.home) {
+        let a = new Atom({
+          id: this.store.nextId(),
+          collectionId: this.homeCollectionId,
+          type: 'write',
+          parentId: null,
+          value: val,
+        });
+        this.homeAtoms.push(a);
+        this.store.persistAtom(a);
+      }
+      return val;
+    }
+  }),
+
+  title: computed('titleAtoms.[]', {
+    get(key) {
+      if (this.titleAtoms.length) {
+        return this.titleAtoms[this.titleAtoms.length-1].value;
+      }
+      else return '';
     },
     set(key, val) {
       if (val !== this.title) {
-        this.atoms.push(this.newAtom(val, this.body));
-      }
-      return val;
-    }
-  }),
-  body: computed('atoms.[]', {
-    get(key) {
-      return this.atoms[this.atoms.length-1].value.body;
-    },
-    set(key, val) {
-      if (val !== this.body) {
-        this.atoms.push(this.newAtom(this.title, val));
+        let a = new Atom({
+          id: this.store.nextId(),
+          collectionId: this.titleCollectionId,
+          type: 'write',
+          parentId: null,
+          value: val,
+        });
+        this.titleAtoms.push(a);
+        this.store.persistAtom(a);
       }
       return val;
     }
   }),
 
-  newAtom(title, body) {
-    return new Atom({
-      id: this.store.nextId(),
-      objectType: 'page',
-      objectId: this.id,
-      type: 'write',
-      parent: null,
-      value: {title, body},
-    });
+  body: computed('bodyAtoms.[]', {
+    get(key) {
+      if (this.bodyAtoms.length) {
+        return this.bodyAtoms[this.bodyAtoms.length-1].value;
+      }
+      else return '';
+    },
+    set(key, val) {
+      if (val !== this.body) {
+        let a = new Atom({
+          id: this.store.nextId(),
+          collectionId: this.bodyCollectionId,
+          type: 'write',
+          parentId: null,
+          value: val,
+        });
+        this.bodyAtoms.push(a);
+        this.store.persistAtom(a);
+      }
+      return val;
+    }
+  }),
+
+  serialize() {
+    return this.getProperties(
+        'id',
+        'homeCollectionId', 
+        'titleCollectionId',
+        'bodyCollectionId',
+      );
   },
 
   numPeers: computed('{incoming,outgoing}.[]', function() {
@@ -70,20 +121,6 @@ export default EmberObject.extend({
   },
   async linkFrom(otherId) {
     return this.store.insertLink(otherId, this.id);
-  },
-
-  saveAttributes() {
-    let tx = this.store.db.transaction('pages', 'readwrite');
-    tx.objectStore('pages').put(this.serialize());
-    return promisifyTx(tx);
-  },
-
-  serialize() {
-    return {
-      id: this.id,
-      home: this.home,
-      atoms: this.atoms.slice(-1),
-    };
   },
 
   // When we remove a page from the graph, we remove all references to its links

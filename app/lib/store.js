@@ -14,11 +14,16 @@ export async function makeStore() {
     req.onsuccess = () => resolve(req.result);
     req.onupgradeneeded = function(e) {
       let db = e.target.result;
+
+      let atoms = db.createObjectStore('atoms', {keyPath: ['id.lamport', 'id.site']});
+      atoms.createIndex('collection', 'collectionId', {unique: false});
+
       db.createObjectStore("pages", { keyPath: "id" });
 
       let links = db.createObjectStore("links", { keyPath: "id" });
       links.createIndex("from", "from", { unique: false });
       links.createIndex("to", "to", { unique: false });
+
     }
   });
 
@@ -54,12 +59,21 @@ export const Store = EmberObject.extend({
     let p = Page.create({
       id: uuid(),
       store: this,
+      homeCollectionId: uuid(),
+      titleCollectionId: uuid(),
+      bodyCollectionId: uuid(),
     });
     this._map.set(p.id, p);
     let tx = this.db.transaction('pages', 'readwrite');
     tx.objectStore('pages').add(p.serialize());
     await promisifyTx(tx);
     return p;
+  },
+
+  async persistAtom(a) {
+    let tx = this.db.transaction('atoms', 'readwrite');
+    tx.objectStore('atoms').add(a);
+    return promisifyTx(tx);
   },
 
   async destroyPage(id) {
@@ -116,14 +130,27 @@ export const Store = EmberObject.extend({
   },
 
   async _buildIdentityMap() {
-    let tx = this.db.transaction(['pages', 'links']);
+    let tx = this.db.transaction(['pages', 'links', 'atoms']);
     this._map = new Map();
     let allPages = await promisifyReq(tx.objectStore('pages').getAll());
+    let atoms = tx.objectStore('atoms').index('collection');
+    let _pageAttributes = [];
     for (let p of allPages) {
-      this._map.set(p.id, Page.create({
+      let page = Page.create({
         store: this,
-        ...p
+        ...p,
+      });
+      _pageAttributes.push(Promise.all([
+        promisifyReq(atoms.getAll(IDBKeyRange.only(p.homeCollectionId))),
+        promisifyReq(atoms.getAll(IDBKeyRange.only(p.titleCollectionId))),
+        promisifyReq(atoms.getAll(IDBKeyRange.only(p.bodyCollectionId))),
+      ]).then(([homeAtoms, titleAtoms, bodyAtoms]) => {
+        window.thepage = page;
+        page.setProperties({
+          homeAtoms, titleAtoms, bodyAtoms
+        });
       }));
+      this._map.set(p.id, page);
     }
 
     let allLinks = await promisifyReq(tx.objectStore('links').getAll());
@@ -139,6 +166,8 @@ export const Store = EmberObject.extend({
       this._map.get(l.from).outgoing.push(link);
       this._map.get(l.to).incoming.push(link);
     }
+    
+    await Promise.all(_pageAttributes);
   },
 });
 

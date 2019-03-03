@@ -1,10 +1,9 @@
 export default class Atom {
-  constructor({id, objectType, objectId, type, parent, value}) {
+  constructor({id, collectionId, type, parentId, value}) {
     this.id = id;
-    this.objectType = objectType;
-    this.objectId = objectId;
+    this.collectionId = collectionId;
     this.type = type;
-    this.parent = parent;
+    this.parentId = parentId;
     this.value = value;
   }
 };
