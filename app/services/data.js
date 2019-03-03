@@ -3,7 +3,7 @@ import {alias, filter} from '@ember/object/computed';
 
 import {task} from 'ember-concurrency';
 
-import {makeStore} from 'nomicon/lib/models';
+import {makeStore} from 'nomicon/lib/store';
 
 export default Service.extend({
   init() {
