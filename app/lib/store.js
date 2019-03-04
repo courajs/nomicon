@@ -6,6 +6,7 @@ import {promisifyReq, promisifyTx} from 'nomicon/lib/idb_utils';
 import Site from './site';
 import Page from './page';
 import Link from './link';
+import LWW from './ordts/lww';
 
 export async function makeStore() {
   let db = await new Promise(function(resolve, reject) {
@@ -59,9 +60,9 @@ export const Store = EmberObject.extend({
     let p = Page.create({
       id: uuid(),
       store: this,
-      homeCollectionId: uuid(),
-      titleCollectionId: uuid(),
-      bodyCollectionId: uuid(),
+      _home: LWW.create({id: uuid(), store: this}),
+      _title: LWW.create({id: uuid(), store: this}),
+      _body: LWW.create({id: uuid(), store: this}),
     });
     this._map.set(p.id, p);
     let tx = this.db.transaction('pages', 'readwrite');
@@ -138,18 +139,16 @@ export const Store = EmberObject.extend({
     for (let p of allPages) {
       let page = Page.create({
         store: this,
-        ...p,
+        id: p.id,
+        _home: LWW.create({id: p.homeId, store: this}),
+        _title: LWW.create({id: p.titleId, store: this}),
+        _body: LWW.create({id: p.bodyId, store: this}),
       });
-      _pageAttributes.push(Promise.all([
-        promisifyReq(atoms.getAll(IDBKeyRange.only(p.homeCollectionId))),
-        promisifyReq(atoms.getAll(IDBKeyRange.only(p.titleCollectionId))),
-        promisifyReq(atoms.getAll(IDBKeyRange.only(p.bodyCollectionId))),
-      ]).then(([homeAtoms, titleAtoms, bodyAtoms]) => {
-        window.thepage = page;
-        page.setProperties({
-          homeAtoms, titleAtoms, bodyAtoms
-        });
-      }));
+      _pageAttributes.push(
+        page._home.load(tx),
+        page._title.load(tx),
+        page._body.load(tx),
+      );
       this._map.set(p.id, page);
     }
 

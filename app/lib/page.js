@@ -1,5 +1,5 @@
 import EmberObject, {computed} from '@ember/object';
-import {not} from '@ember/object/computed';
+import {alias, not} from '@ember/object/computed';
 
 import {promisifyTx} from 'nomicon/lib/idb_utils';
 import Atom from './atom';
@@ -16,99 +16,25 @@ export default EmberObject.extend({
 
   // These are assigned by the store in _buildIdentityMap,
   // as Link objects
-  incoming: [],
-  outgoing: [],
+  incoming: computed(()=>[]),
+  outgoing: computed(()=>[]),
 
-  // These are populated by the store in _buildIdentityMap
-  homeAtoms: [],
-  titleAtoms: [],
-  bodyAtoms: [],
+  // These are ORDTs assigned by the store in _buildIdentityMap
+  _home: null,
+  _title: null,
+  _body: null,
 
-  init() {
-    this._super(...arguments);
-    this.incoming = [];
-    this.outgoing = [];
-    this.homeAtoms = [];
-    this.titleAtoms = [];
-    this.bodyAtoms = [];
-  },
-
-  home: computed('homeAtoms.[]', {
-    get(key) {
-      if (this.homeAtoms.length) {
-        return this.homeAtoms[this.homeAtoms.length-1].value;
-      }
-      else return '';
-    },
-    set(key, val) {
-      if (val !== this.home) {
-        let a = new Atom({
-          id: this.store.nextId(),
-          collectionId: this.homeCollectionId,
-          type: 'write',
-          parentId: null,
-          value: val,
-        });
-        this.homeAtoms.push(a);
-        this.store.persistAtom(a);
-      }
-      return val;
-    }
-  }),
-
-  title: computed('titleAtoms.[]', {
-    get(key) {
-      if (this.titleAtoms.length) {
-        return this.titleAtoms[this.titleAtoms.length-1].value;
-      }
-      else return '';
-    },
-    set(key, val) {
-      if (val !== this.title) {
-        let a = new Atom({
-          id: this.store.nextId(),
-          collectionId: this.titleCollectionId,
-          type: 'write',
-          parentId: null,
-          value: val,
-        });
-        this.titleAtoms.push(a);
-        this.store.persistAtom(a);
-      }
-      return val;
-    }
-  }),
-
-  body: computed('bodyAtoms.[]', {
-    get(key) {
-      if (this.bodyAtoms.length) {
-        return this.bodyAtoms[this.bodyAtoms.length-1].value;
-      }
-      else return '';
-    },
-    set(key, val) {
-      if (val !== this.body) {
-        let a = new Atom({
-          id: this.store.nextId(),
-          collectionId: this.bodyCollectionId,
-          type: 'write',
-          parentId: null,
-          value: val,
-        });
-        this.bodyAtoms.push(a);
-        this.store.persistAtom(a);
-      }
-      return val;
-    }
-  }),
+  home: alias('_home.value'),
+  title: alias('_title.value'),
+  body: alias('_body.value'),
 
   serialize() {
-    return this.getProperties(
-        'id',
-        'homeCollectionId', 
-        'titleCollectionId',
-        'bodyCollectionId',
-      );
+    return {
+      id: this.id,
+      homeId: this._home.id,
+      titleId: this._title.id,
+      bodyId: this._body.id,
+    };
   },
 
   numPeers: computed('{incoming,outgoing}.[]', function() {
