@@ -6,6 +6,7 @@ import Atom from './atom';
 
 export default EmberObject.extend({
   store: null,
+  atomId: null,
 
   // These are stored directly in IndexedDB
   id: '',

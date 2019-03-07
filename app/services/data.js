@@ -32,9 +32,9 @@ export default Service.extend({
     return p;
   },
 
-  async destroyPage(id) {
+  async destroyPage(page) {
     await this.ready;
-    let p = await this.store.destroyPage(id);
+    let p = await this.store.destroyPage(page);
     this.invalidate();
     return p;
   },

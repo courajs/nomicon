@@ -7,8 +7,14 @@ import Site from './site';
 import Page from './page';
 import Link from './link';
 import LWW from './ordts/lww';
+import PageGraph from './ordts/page-graph';
 
 export async function makeStore() {
+  let mainGraphCollectionId = window.localStorage.NomiconGraphCollectionId;
+  if (!mainGraphCollectionId) {
+    window.localStorage.NomiconGraphCollectionId = mainGraphCollectionId = uuid();
+  }
+
   let db = await new Promise(function(resolve, reject) {
     let req = window.indexedDB.open("nomicon");
     req.onerror = reject;
@@ -18,25 +24,20 @@ export async function makeStore() {
 
       let atoms = db.createObjectStore('atoms', {keyPath: ['id.lamport', 'id.site']});
       atoms.createIndex('collection', 'collectionId', {unique: false});
-
-      db.createObjectStore("pages", { keyPath: "id" });
-
-      let links = db.createObjectStore("links", { keyPath: "id" });
-      links.createIndex("from", "from", { unique: false });
-      links.createIndex("to", "to", { unique: false });
-
     }
   });
 
-  let store = Store.create({db, site: Site.load()});
+  let store = Store.create({db, site: Site.load(), id: mainGraphCollectionId});
   await store.ready;
   return store;
 }
 
 export const Store = EmberObject.extend({
+  id: '',
   db: null,
   site: null,
   _map: null,
+  graph: null,
 
   init() {
     this._super(...arguments);
@@ -57,18 +58,20 @@ export const Store = EmberObject.extend({
   },
 
   async newPage(attrs) {
-    let p = Page.create({
-      id: uuid(),
+    let p = await this.graph.createPage();
+    let page = Page.create({
+      id: p.value.uuid,
+      atomId: p.id,
       store: this,
-      _home: LWW.create({id: uuid(), store: this}),
-      _title: LWW.create({id: uuid(), store: this}),
-      _body: LWW.create({id: uuid(), store: this}),
+      _home: LWW.create({id: p.value.homeCollectionId, store: this}),
+      _title: LWW.create({id: p.value.titleCollectionId, store: this}),
+      _body: LWW.create({id: p.value.bodyCollectionId, store: this}),
     });
-    this._map.set(p.id, p);
-    let tx = this.db.transaction('pages', 'readwrite');
-    tx.objectStore('pages').add(p.serialize());
-    await promisifyTx(tx);
-    return p;
+    this._map.set(page.id, page);
+    if (attrs && attrs.title) {
+      page.set('title', attrs.title);
+    }
+    return page;
   },
 
   async persistAtom(a) {
@@ -77,93 +80,82 @@ export const Store = EmberObject.extend({
     return promisifyTx(tx);
   },
 
-  async destroyPage(id) {
-    let tx = this.db.transaction(['pages', 'links'], 'readwrite');
-    // delete the persisted page
-    tx.objectStore('pages').delete(id);
+  async destroyPage(page) {
+    let ps = [];
+    ps.push(this.graph.deleteItem(page.atomId));
+    ps = ps.concat(page.incoming.map(l => this.graph.deleteItem(l.id))); 
+    ps = ps.concat(page.outgoing.map(l => this.graph.deleteItem(l.id))); 
 
-    // delete the persisted page
-    let links = tx.objectStore('links');
-    let from = promisifyReq(links.index('from').getAll(IDBKeyRange.only(id)));
-    let to = promisifyReq(links.index('to').getAll(IDBKeyRange.only(id)));
-    [from, to] = await Promise.all([from, to]);
-    for (let l of from) {
-      links.delete(l.id);
-    }
-    for (let l of to) {
-      links.delete(l.id);
-    }
+    page.incoming.forEach((l) => l.from.outgoing.removeObject(l));
+    page.outgoing.forEach((l) => l.to.incoming.removeObject(l));
+    this._map.delete(page.id);
 
-    // remove in-memory page and links from the graph
-    let p = this._map.get(id);
-    p.incoming.forEach((l) => l.from.outgoing.removeObject(l));
-    p.outgoing.forEach((l) => l.to.incoming.removeObject(l));
-    this._map.delete(id);
-
-    return promisifyTx(tx);
+    return Promise.all(ps);
   },
 
   async destroyLink(link) {
-    let tx = this.db.transaction(['links'], 'readwrite');
-    tx.objectStore('links').delete(link.id);
+    await this.graph.deleteItem(link.id);
 
     link.from.outgoing.removeObject(link);
     link.to.incoming.removeObject(link);
     link.destroy();
-
-    return promisifyTx(tx);
   },
 
-  async insertLink(fromId, toId) {
-    let from = this._map.get(fromId);
-    let to = this._map.get(toId);
-    let l = Link.create({
-      id: ''+Math.random(),
+  async insertLink(fromUUID, toUUID) {
+    let l = await this.graph.createLink(fromUUID, toUUID);
+    let from = this._map.get(fromUUID);
+    let to = this._map.get(toUUID);
+    let link = Link.create({
+      id: l.id,
       from,
       to,
       store: this,
     });
-    from.outgoing.pushObject(l);
-    to.incoming.pushObject(l);
-    let tx = this.db.transaction('links', 'readwrite');
-    tx.objectStore('links').add(l.serialize());
-    return promisifyTx(tx);
+    from.outgoing.pushObject(link);
+    to.incoming.pushObject(link);
+    return link;
   },
 
   async _buildIdentityMap() {
-    let tx = this.db.transaction(['pages', 'links', 'atoms']);
+    let tx = this.db.transaction('atoms');
     this._map = new Map();
-    let allPages = await promisifyReq(tx.objectStore('pages').getAll());
     let atoms = tx.objectStore('atoms').index('collection');
+    let graphAtoms = await promisifyReq(atoms.getAll(IDBKeyRange.only(this.id)));
+    let graph = this.graph = PageGraph.create({
+      id: this.id,
+      atoms: graphAtoms,
+      store: this,
+    });
+    let {pages, links} = graph.process();
+
     let _pageAttributes = [];
-    for (let p of allPages) {
+    for (let p of pages) {
       let page = Page.create({
         store: this,
-        id: p.id,
-        _home: LWW.create({id: p.homeId, store: this}),
-        _title: LWW.create({id: p.titleId, store: this}),
-        _body: LWW.create({id: p.bodyId, store: this}),
+        id: p.value.uuid,
+        atomId: p.id,
+        _home: LWW.create({id: p.value.homeCollectionId, store: this}),
+        _title: LWW.create({id: p.value.titleCollectionId, store: this}),
+        _body: LWW.create({id: p.value.bodyCollectionId, store: this}),
       });
       _pageAttributes.push(
         page._home.load(tx),
         page._title.load(tx),
         page._body.load(tx),
       );
-      this._map.set(p.id, page);
+      this._map.set(p.value.uuid, page);
     }
 
-    let allLinks = await promisifyReq(tx.objectStore('links').getAll());
-    for (let l of allLinks) {
-      let from = this._map.get(l.from);
-      let to = this._map.get(l.to);
+    for (let l of links) {
+      let from = this._map.get(l.value.from);
+      let to = this._map.get(l.value.to);
       let link = Link.create({
         id: l.id,
         from,
         to,
-        store: this,
       });
-      this._map.get(l.from).outgoing.push(link);
-      this._map.get(l.to).incoming.push(link);
+      from.outgoing.push(link);
+      to.incoming.push(link);
     }
     
     await Promise.all(_pageAttributes);

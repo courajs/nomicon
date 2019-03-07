@@ -31,10 +31,9 @@ export default Controller.extend({
   modalSearchText: '',
 
   destroyPage: task(function* (page) {
-    let m = this.model;
-    yield this.data.destroyPage(page.id);
+    yield this.data.destroyPage(page);
     yield this.transitionToRoute('home');
-    m.destroy();
+    page.destroy();
   }),
 
   hotkeys: bound({

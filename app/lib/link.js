@@ -1,8 +1,8 @@
 import EmberObject from '@ember/object';
 
 export default EmberObject.extend({
-  store: null,
   id: '',
+  atomId: null,
   from: null,
   to: null,
 
