@@ -38,7 +38,7 @@ export default EmberObject.extend({
 
   async load(tx) {
     let atoms = tx.objectStore('atoms').index('collection');
-    this.atoms = await promisifyReq(atoms.getAll(IDBKeyRange.only(this.id)));
+    this.set('atoms', await promisifyReq(atoms.getAll(IDBKeyRange.only(this.id))));
     return this;
   }
 });
