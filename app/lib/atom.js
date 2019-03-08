@@ -6,4 +6,4 @@ export default class Atom {
     this.locator = locator;
     this.value = value;
   }
-};
+}

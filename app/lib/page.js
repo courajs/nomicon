@@ -1,16 +1,12 @@
 import EmberObject, {computed} from '@ember/object';
 import {alias, not} from '@ember/object/computed';
 
-import {promisifyTx} from 'nomicon/lib/idb_utils';
-import Atom from './atom';
-
 export default EmberObject.extend({
   store: null,
   atomId: null,
 
   // These are stored directly in IndexedDB
   id: '',
-  home: false,
   homeCollectionId: '',
   titleCollectionId: '',
   bodyCollectionId: '',

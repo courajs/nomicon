@@ -24,8 +24,6 @@ export default Component.extend({
     }
   },
 
-  log: console.log,
-
   addRef(el, name) {
     this.refs[name] = el;
     if (!this.page.title && name == 'title') {

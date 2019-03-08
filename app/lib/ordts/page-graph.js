@@ -2,7 +2,6 @@ import EmberObject from '@ember/object';
 
 import uuid from 'uuid/v4';
 
-import {promisifyReq} from 'nomicon/lib/idb_utils';
 import Atom from '../atom';
 
 export default EmberObject.extend({
