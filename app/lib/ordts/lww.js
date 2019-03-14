@@ -22,13 +22,13 @@ export default EmberObject.extend({
       if (val !== this.value) {
         let prev = this.atoms[this.atoms.length-1];
         let prevId = prev && prev.id || null;
-        let a = new Atom({
+        let a = {
           id: this.store.nextId(),
           collectionId: this.id,
           type: 'write',
           locator: prevId,
           value: val,
-        });
+        };
         this.atoms.push(a);
         this.store.persistAtom(a);
       }

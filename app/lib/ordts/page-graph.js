@@ -53,19 +53,19 @@ export default EmberObject.extend({
   },
 
   async deleteItem(itemId) {
-    let atom = new Atom({
+    let atom = {
       id: this.store.nextId(),
       collectionId: this.id,
       type: 'delete',
       locator: itemId,
       value: null,
-    });
+    };
     this.atoms.push(atom);
     await this.store.persistAtom(atom);
   },
 
   async createPage() {
-    let atom = new Atom({
+    let atom = {
       id: this.store.nextId(),
       collectionId: this.id,
       type: 'new-page',
@@ -76,14 +76,14 @@ export default EmberObject.extend({
         titleCollectionId: uuid(),
         bodyCollectionId: uuid(),
       },
-    });
+    };
     this.atoms.push(atom);
     await this.store.persistAtom(atom);
     return atom;
   },
 
   async createLink(fromUUID, toUUID) {
-    let atom = new Atom({
+    let atom = {
       id: this.store.nextId(),
       collectionId: this.id,
       type: 'new-link',
@@ -92,7 +92,7 @@ export default EmberObject.extend({
         from: fromUUID,
         to: toUUID,
       },
-    });
+    };
     this.atoms.push(atom);
     await this.store.persistAtom(atom);
     return atom;
