@@ -63,9 +63,9 @@ export const Store = EmberObject.extend({
       id: p.value.uuid,
       atomId: p.id,
       store: this,
-      _home: LWW.create({id: p.value.homeCollectionId, store: this}),
-      _title: LWW.create({id: p.value.titleCollectionId, store: this}),
-      _body: LWW.create({id: p.value.bodyCollectionId, store: this}),
+      _home: new LWW(p.value.homeCollectionId, this, false),
+      _title: new LWW(p.value.titleCollectionId, this, ""),
+      _body: new LWW(p.value.bodyCollectionId, this, ""),
     });
     this._map.set(page.id, page);
     if (attrs && attrs.title) {
@@ -134,9 +134,9 @@ export const Store = EmberObject.extend({
         store: this,
         id: p.value.uuid,
         atomId: p.id,
-        _home: LWW.create({id: p.value.homeCollectionId, store: this}),
-        _title: LWW.create({id: p.value.titleCollectionId, store: this}),
-        _body: LWW.create({id: p.value.bodyCollectionId, store: this}),
+        _home: new LWW(p.value.homeCollectionId, this, false),
+        _title: new LWW(p.value.titleCollectionId, this, ""),
+        _body: new LWW(p.value.bodyCollectionId, this, ""),
       });
       _pageAttributes.push(
         page._home.load(tx),

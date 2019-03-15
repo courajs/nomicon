@@ -1,15 +1,15 @@
 export default class Id {
-  constructor(site, index, lamport) {
-    this.site = site;
-    this.index = index;
-    this.lamport = lamport;
-  }
+  constructor(
+    public site: String, 
+    public index: number,
+    public lamport: number,
+  ) {}
 
-  eq(that) {
+  eq(that: Id): boolean {
     return this.site === that.site && this.index === that.index;
   }
 
-  gt(that) {
+  gt(that: Id): boolean {
     return this.lamport > that.lamport || (this.lamport === that.lamport && this.site > that.site);
   }
 }

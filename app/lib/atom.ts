@@ -1,5 +1,7 @@
+import Id from './id';
+
 export interface Atom<Value, Kind, Locator> {
-  id: String;
+  id: Id;
   collectionId: String;
   type: Kind;
   locator: Locator;
