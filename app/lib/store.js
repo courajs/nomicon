@@ -1,6 +1,7 @@
 import EmberObject from '@ember/object';
 
 import uuid from 'uuid/v4';
+import {wrap} from 'idb';
 
 import {promisifyReq, promisifyTx} from 'nomicon/lib/idb_utils';
 import Site from './site';
@@ -8,6 +9,7 @@ import Page from './page';
 import Link from './link';
 import LWW from './ordts/lww';
 import PageGraph from './ordts/page-graph';
+import PersistedArray from './persisted-atom-array';
 
 export async function makeStore() {
   let mainGraphCollectionId = window.localStorage.NomiconGraphCollectionId;
@@ -59,13 +61,27 @@ export const Store = EmberObject.extend({
 
   async newPage(attrs) {
     let p = await this.graph.createPage();
+    let db = wrap(this.db);
+
+    let id = p.value.homeCollectionId;
+    let col = new PersistedArray(id, [], db);
+    let home = new LWW(id, false, col, this);
+
+    id = p.value.titleCollectionId;
+    col = new PersistedArray(id, [], db);
+    let title = new LWW(id, '', col, this);
+
+    id = p.value.bodyCollectionId;
+    col = new PersistedArray(id, [], db);
+    let body = new LWW(id, '', col, this);
+
     let page = Page.create({
       id: p.value.uuid,
       atomId: p.id,
       store: this,
-      _home: new LWW(p.value.homeCollectionId, this, false),
-      _title: new LWW(p.value.titleCollectionId, this, ""),
-      _body: new LWW(p.value.bodyCollectionId, this, ""),
+      _home: home,
+      _title: title,
+      _body: body,
     });
     this._map.set(page.id, page);
     if (attrs && attrs.title) {
@@ -128,22 +144,34 @@ export const Store = EmberObject.extend({
     });
     let {pages, links} = graph.process();
 
-    let _pageAttributes = [];
+    let idbthing = wrap(this.db);
+
+    let _pages = [];
     for (let p of pages) {
-      let page = Page.create({
-        store: this,
-        id: p.value.uuid,
-        atomId: p.id,
-        _home: new LWW(p.value.homeCollectionId, this, false),
-        _title: new LWW(p.value.titleCollectionId, this, ""),
-        _body: new LWW(p.value.bodyCollectionId, this, ""),
+      let p2 = Promise.all([
+          PersistedArray.load(p.value.homeCollectionId, idbthing),
+          PersistedArray.load(p.value.titleCollectionId, idbthing),
+          PersistedArray.load(p.value.bodyCollectionId, idbthing),
+      ]).then(([home, title, body]) => {
+        let page = Page.create({
+          store: this,
+          id: p.value.uuid,
+          atomId: p.id,
+          _home: new LWW(p.value.homeCollectionId, false, home, this),
+          _title: new LWW(p.value.titleCollectionId, '', title, this),
+          _body: new LWW(p.value.bodyCollectionId, '', body, this),
+        });
+        this._map.set(p.value.uuid, page);
       });
-      _pageAttributes.push(
-        page._home.load(tx),
-        page._title.load(tx),
-        page._body.load(tx),
-      );
-      this._map.set(p.value.uuid, page);
+      _pages.push(p2);
+    }
+
+    // await Promise.all(_pages);
+    // ^ was causing typescript build to hang
+    // here's a dumb workaround.
+    // maybe https://github.com/typed-ember/ember-cli-typescript/issues/337
+    for (let p of _pages) {
+      await p;
     }
 
     for (let l of links) {
@@ -157,8 +185,6 @@ export const Store = EmberObject.extend({
       from.outgoing.push(link);
       to.incoming.push(link);
     }
-    
-    await Promise.all(_pageAttributes);
   },
 });
 

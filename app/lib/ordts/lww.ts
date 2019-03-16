@@ -1,22 +1,26 @@
-import {set} from '@ember/object';
 import {computed} from '@ember-decorators/object';
+import {alias} from '@ember-decorators/object/computed';
 
-import {promisifyReq} from 'nomicon/lib/idb_utils';
 import Id from '../id';
 import {Atom} from '../atom';
+import PersistedArray from '../persisted-atom-array';
+
+type A<Content> = Atom<Content, 'write', Id|null>
 
 export default class LWW<Content>{
-  atoms: Array<Atom<Content, 'write', Id|null>> = [];
   constructor(
-      public id: String,
-      public store: any,
+      public id: string,
       public defaultValue: Content,
+      private atoms: PersistedArray<A<Content>>,
+      private store: any,
   ) {}
 
-  @computed('atoms.[]')
+  @alias('atoms.atoms') _atoms!: Array<A<Content>>;
+
+  @computed('_atoms.[]')
   get value(): Content {
-    if (this.atoms.length) {
-      return this.atoms[this.atoms.length-1].value;
+    if (this._atoms.length) {
+      return this._atoms[this._atoms.length-1].value;
     } else {
       return this.defaultValue;
     }
@@ -24,22 +28,16 @@ export default class LWW<Content>{
 
   set value(val: Content) {
     if (val !== this.value) {
-      let prev = this.atoms[this.atoms.length-1];
+      let prev = this._atoms[this._atoms.length-1];
       let prevId = prev && prev.id || null;
-      let a = {
+      let a: A<Content> = {
         id: this.store.nextId() as Id,
         collectionId: this.id,
-        type: <'write'> 'write',
+        type: 'write',
         locator: prevId,
         value: val,
       };
       this.atoms.push(a);
-      this.store.persistAtom(a);
     }
-  }
-
-  async load(tx: IDBTransaction) {
-    let atoms = tx.objectStore('atoms').index('collection');
-    set(this, 'atoms', await promisifyReq(atoms.getAll(IDBKeyRange.only(this.id))));
   }
 };
