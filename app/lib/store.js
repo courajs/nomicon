@@ -3,7 +3,7 @@ import EmberObject from '@ember/object';
 import uuid from 'uuid/v4';
 import {wrap} from 'idb';
 
-import {promisifyReq, promisifyTx} from 'nomicon/lib/idb_utils';
+import {promisifyTx} from 'nomicon/lib/idb_utils';
 import Site from './site';
 import Page from './page';
 import Link from './link';
@@ -133,18 +133,13 @@ export const Store = EmberObject.extend({
   },
 
   async _buildIdentityMap() {
-    let tx = this.db.transaction('atoms');
     this._map = new Map();
-    let atoms = tx.objectStore('atoms').index('collection');
-    let graphAtoms = await promisifyReq(atoms.getAll(IDBKeyRange.only(this.id)));
-    let graph = this.graph = PageGraph.create({
-      id: this.id,
-      atoms: graphAtoms,
-      store: this,
-    });
+    let idbthing = wrap(this.db);
+
+    let graphCollection = await PersistedArray.load(this.id, idbthing);
+    let graph = this.graph = new PageGraph(this.id, graphCollection, this);
     let {pages, links} = graph.process();
 
-    let idbthing = wrap(this.db);
 
     let _pages = [];
     for (let p of pages) {

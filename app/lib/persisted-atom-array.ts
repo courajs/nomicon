@@ -13,11 +13,10 @@ export default class PersistedArray<T> {
     return new this<T>(id, atoms, db);
   }
 
-  async push(atom: T): Promise<null> {
+  async push(atom: T): Promise<void> {
     this.atoms.push(atom);
     set(this, 'atoms', this.atoms);
     await this.db.add('atoms', atom);
-    return null;
   }
 }
 
