@@ -5,17 +5,17 @@ import Id from '../id';
 import {Atom} from '../atom';
 import PersistedArray from '../persisted-atom-array';
 
-type A<Content> = Atom<Content, 'write', Id|null>
+export type LWWAtom<Content> = Atom<Content, 'write', Id|null>
 
 export default class LWW<Content>{
   constructor(
       public id: string,
       public defaultValue: Content,
-      private atoms: PersistedArray<A<Content>>,
+      private atoms: PersistedArray<LWWAtom<Content>>,
       private store: any,
   ) {}
 
-  @alias('atoms.atoms') _atoms!: Array<A<Content>>;
+  @alias('atoms.atoms') _atoms!: Array<LWWAtom<Content>>;
 
   @computed('_atoms.[]')
   get value(): Content {
@@ -30,7 +30,7 @@ export default class LWW<Content>{
     if (val !== this.value) {
       let prev = this._atoms[this._atoms.length-1];
       let prevId = prev && prev.id || null;
-      let a: A<Content> = {
+      let a: LWWAtom<Content> = {
         id: this.store.nextId() as Id,
         collectionId: this.id,
         type: 'write',

@@ -1,3 +1,4 @@
+import {set} from '@ember/object';
 import Component from '@ember/component';
 import {inject} from '@ember/service';
 import {task} from 'ember-concurrency';
@@ -11,9 +12,9 @@ export default Component.extend({
   },
 
   update: task(function* () {
-    this.page.set('title', this.refs.title.value);
-    this.page.set('body', this.refs.body.value);
-    this.page.set('home', this.refs.home.checked);
+    set(this.page, 'title', this.refs.title.value);
+    set(this.page, 'body', this.refs.body.value);
+    set(this.page, 'home', this.refs.home.checked);
   }).keepLatest(),
 
   didReceiveAttrs() {

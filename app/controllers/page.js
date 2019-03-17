@@ -33,7 +33,6 @@ export default Controller.extend({
   destroyPage: task(function* (page) {
     yield this.data.destroyPage(page);
     yield this.transitionToRoute('home');
-    page.destroy();
   }),
 
   hotkeys: bound({

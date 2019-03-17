@@ -19,7 +19,7 @@ interface linkValue {
 type PageAtom = Atom<pageValue, 'new-page', Id|null>;
 type LinkAtom = Atom<linkValue, 'new-link', Id|null>;
 type DelAtom  = Atom<null, 'delete', Id>;
-type GraphAtom = PageAtom | LinkAtom | DelAtom;
+export type GraphAtom = PageAtom | LinkAtom | DelAtom;
 
 interface Deletable {
   deleted?: boolean;

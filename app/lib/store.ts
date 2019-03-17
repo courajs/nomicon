@@ -1,102 +1,91 @@
-import EmberObject from '@ember/object';
-
+import {set} from '@ember/object';
 import uuid from 'uuid/v4';
-import {wrap} from 'idb';
+import {openDB, IDBPDatabase} from 'idb';
 
-import {promisifyTx} from 'nomicon/lib/idb_utils';
+import Id from './site';
 import Site from './site';
 import Page from './page';
 import Link from './link';
-import LWW from './ordts/lww';
-import PageGraph from './ordts/page-graph';
+import LWW, {LWWAtom} from './ordts/lww';
+import PageGraph, {GraphAtom} from './ordts/page-graph';
 import PersistedArray from './persisted-atom-array';
 
-export async function makeStore() {
+
+export async function makeStore(): Promise<Store> {
   let mainGraphCollectionId = window.localStorage.NomiconGraphCollectionId;
   if (!mainGraphCollectionId) {
     window.localStorage.NomiconGraphCollectionId = mainGraphCollectionId = uuid();
   }
 
-  let db = await new Promise(function(resolve, reject) {
-    let req = window.indexedDB.open("nomicon");
-    req.onerror = reject;
-    req.onsuccess = () => resolve(req.result);
-    req.onupgradeneeded = function(e) {
-      let db = e.target.result;
-
+  let db = await openDB('nomicon', 1, {
+    upgrade(db) {
       let atoms = db.createObjectStore('atoms', {keyPath: ['id.lamport', 'id.site']});
       atoms.createIndex('collection', 'collectionId', {unique: false});
     }
   });
 
-  let store = Store.create({db, site: Site.load(), id: mainGraphCollectionId});
+  let store = new Store(mainGraphCollectionId, Site.load(), db);
   await store.ready;
   return store;
 }
 
-export const Store = EmberObject.extend({
-  id: '',
-  db: null,
-  site: null,
-  _map: null,
-  graph: null,
+export class Store {
+  _map: Map<string, any> = new Map();
+  graph!: PageGraph;
+  ready: Promise<void>;
 
-  init() {
-    this._super(...arguments);
+  constructor(
+    public id: string,
+    private site: any,
+    private db: IDBPDatabase,
+  ) {
     this.ready = this._buildIdentityMap();
-  },
+  }
 
-  nextId() {
+  nextId(): Id {
     return this.site.nextId();
-  },
+  }
 
-  getPage(id) {
+  getPage(id: string): any {
     return this._map.get(id);
-  },
+  }
 
-  allPages() {
+  allPages(): Array<any> {
     // TODO: make this a live array
     return Array.from(this._map.values());
-  },
+  }
 
-  async newPage(attrs) {
+  async newPage(attrs: {title?: string}): Promise<any> {
     let p = await this.graph.createPage();
-    let db = wrap(this.db);
 
     let id = p.value.homeCollectionId;
-    let col = new PersistedArray(id, [], db);
+    let col = new PersistedArray(id, [], this.db);
     let home = new LWW(id, false, col, this);
 
     id = p.value.titleCollectionId;
-    col = new PersistedArray(id, [], db);
+    col = new PersistedArray(id, [], this.db);
     let title = new LWW(id, '', col, this);
 
     id = p.value.bodyCollectionId;
-    col = new PersistedArray(id, [], db);
+    col = new PersistedArray(id, [], this.db);
     let body = new LWW(id, '', col, this);
 
-    let page = Page.create({
-      id: p.value.uuid,
-      atomId: p.id,
-      store: this,
-      _home: home,
-      _title: title,
-      _body: body,
-    });
+    let page = new Page(
+      p.value.uuid,
+      p.id,
+      home,
+      title,
+      body,
+      this,
+    );
     this._map.set(page.id, page);
     if (attrs && attrs.title) {
-      page.set('title', attrs.title);
+      set(page, 'title', attrs.title);
     }
     return page;
-  },
+  }
 
-  async persistAtom(a) {
-    let tx = this.db.transaction('atoms', 'readwrite');
-    tx.objectStore('atoms').add(a);
-    return promisifyTx(tx);
-  },
-
-  async destroyPage(page) {
+  async destroyPage(page: Page): Promise<void> {
     let ps = [];
     ps.push(this.graph.deleteItem(page.atomId));
     ps = ps.concat(page.incoming.map(l => this.graph.deleteItem(l.id))); 
@@ -106,37 +95,36 @@ export const Store = EmberObject.extend({
     page.outgoing.forEach((l) => l.to.incoming.removeObject(l));
     this._map.delete(page.id);
 
-    return Promise.all(ps);
-  },
+    for (let p of ps) {
+      await p;
+    }
+  }
 
-  async destroyLink(link) {
+  async destroyLink(link: Link): Promise<void> {
     await this.graph.deleteItem(link.id);
 
     link.from.outgoing.removeObject(link);
     link.to.incoming.removeObject(link);
-    link.destroy();
-  },
+  }
 
-  async insertLink(fromUUID, toUUID) {
+  async insertLink(fromUUID: string, toUUID: string): Promise<Link> {
     let l = await this.graph.createLink(fromUUID, toUUID);
     let from = this._map.get(fromUUID);
     let to = this._map.get(toUUID);
-    let link = Link.create({
+    let link = {
       id: l.id,
       from,
       to,
-      store: this,
-    });
+    };
     from.outgoing.pushObject(link);
     to.incoming.pushObject(link);
     return link;
-  },
+  }
 
-  async _buildIdentityMap() {
+  async _buildIdentityMap(): Promise<void> {
     this._map = new Map();
-    let idbthing = wrap(this.db);
 
-    let graphCollection = await PersistedArray.load(this.id, idbthing);
+    let graphCollection = await PersistedArray.load<GraphAtom>(this.id, this.db);
     let graph = this.graph = new PageGraph(this.id, graphCollection, this);
     let {pages, links} = graph.process();
 
@@ -144,18 +132,18 @@ export const Store = EmberObject.extend({
     let _pages = [];
     for (let p of pages) {
       let p2 = Promise.all([
-          PersistedArray.load(p.value.homeCollectionId, idbthing),
-          PersistedArray.load(p.value.titleCollectionId, idbthing),
-          PersistedArray.load(p.value.bodyCollectionId, idbthing),
+          PersistedArray.load<LWWAtom<boolean>>(p.value.homeCollectionId, this.db),
+          PersistedArray.load<LWWAtom<string>>(p.value.titleCollectionId, this.db),
+          PersistedArray.load<LWWAtom<string>>(p.value.bodyCollectionId, this.db),
       ]).then(([home, title, body]) => {
-        let page = Page.create({
-          store: this,
-          id: p.value.uuid,
-          atomId: p.id,
-          _home: new LWW(p.value.homeCollectionId, false, home, this),
-          _title: new LWW(p.value.titleCollectionId, '', title, this),
-          _body: new LWW(p.value.bodyCollectionId, '', body, this),
-        });
+        let page = new Page(
+          p.value.uuid,
+          p.id,
+          new LWW(p.value.homeCollectionId, false, home, this),
+          new LWW(p.value.titleCollectionId, '', title, this),
+          new LWW(p.value.bodyCollectionId, '', body, this),
+          this,
+        );
         this._map.set(p.value.uuid, page);
       });
       _pages.push(p2);
@@ -172,15 +160,16 @@ export const Store = EmberObject.extend({
     for (let l of links) {
       let from = this._map.get(l.value.from);
       let to = this._map.get(l.value.to);
-      let link = Link.create({
+      let link = {
         id: l.id,
         from,
         to,
-      });
+      };
       from.outgoing.push(link);
       to.incoming.push(link);
     }
-  },
-});
+  }
+}
+
 
 export default Store;
