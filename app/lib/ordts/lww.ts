@@ -1,51 +1,50 @@
-import {alias} from '@ember/object/computed';
+import {tracked} from '@glimmer/tracking';
 
 import Id from '../id';
 import {Atom} from '../atom';
-import PersistedArray from '../persisted-atom-array';
+import ORDT from './ordt';
 
-export type LWWAtom<Content> = Atom<Content, 'write', Id|null>
+export type LWWAtom<ContentType> = Atom<ContentType, 'write', Id|null>
 
-export default class LWW<Content>{
-  id: string;
-  defaultValue: Content;
-  atoms: PersistedArray<LWWAtom<Content>>;
-  store: any;
+export default class LWW<ContentType> implements ORDT<LWWAtom<ContentType>, ContentType> {
+  readonly collectionId: string;
+  @tracked private atoms: Array<LWWAtom<ContentType>>;
+  private defaultValue: ContentType;
 
-  constructor(
-      id: string,
-      defaultValue: Content,
-      atoms: PersistedArray<LWWAtom<Content>>,
-      store: any,
-  ) {
-    this.id = id;
-    this.defaultValue = defaultValue;
+  constructor(collectionId: string, atoms: Array<LWWAtom<ContentType>>, d: ContentType) {
+    this.collectionId = collectionId;
     this.atoms = atoms;
-    this.store = store;
+    this.defaultValue = d;
   }
 
-  @alias('atoms.atoms') _atoms!: Array<LWWAtom<Content>>;
+  // Perhaps...
+  // static withDefault<D>(dValue: D): LWW<D> { ... }
 
-  get value(): Content {
-    if (this._atoms.length) {
-      return this._atoms[this._atoms.length-1].value;
+  mergeAtoms(atoms: Array<LWWAtom<ContentType>>): void {
+    throw new Error("not implemented");
+    console.log(atoms);
+  }
+
+  get value(): ContentType {
+    if (this.atoms.length) {
+      return this.atoms[this.atoms.length-1].value;
     } else {
       return this.defaultValue;
     }
   }
 
-  set value(val: Content) {
-    if (val !== this.value) {
-      let prev = this._atoms[this._atoms.length-1];
-      let prevId = prev && prev.id || null;
-      let a: LWWAtom<Content> = {
-        id: this.store.nextId() as Id,
-        collectionId: this.id,
-        type: 'write',
-        locator: prevId,
-        value: val,
-      };
-      this.atoms.push(a);
-    }
+  setValue(newVal: ContentType, id: Id): LWWAtom<ContentType> {
+    let prev = this.atoms[this.atoms.length-1];
+    let prevId = prev && prev.id || null;
+    let a: LWWAtom<ContentType> = {
+      id,
+      collectionId: this.collectionId,
+      type: 'write',
+      locator: prevId,
+      value: newVal,
+    };
+    this.atoms.push(a);
+    this.atoms = this.atoms;
+    return a;
   }
 };
