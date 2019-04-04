@@ -2,7 +2,7 @@ import Id from './id';
 
 export interface Atom<Value, Kind, Locator> {
   id: Id;
-  collectionId: String;
+  collectionId: string;
   type: Kind;
   locator: Locator;
   value: Value;
