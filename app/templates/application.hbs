@@ -1,33 +1,43 @@
-<div class="flex items-stretch h-screen">
-  <Sidebar class="flex-none border w-64" />
-  <div class="flex-1 border">
-    {{outlet}}
+{{#if (eq this.auth.authState 'pending')}}
+  Loading...
+{{else if (eq this.auth.authState 'unauthed')}}
+  <form onsubmit={{action this.authenticate}}>
+    <label>
+      Authenticate as: {{input value=this.clientId class="border"}}
+    </label>
+  </form>
+{{else}}
+  <div class="flex items-stretch h-screen">
+    <Sidebar class="flex-none border w-64" />
+    <div class="flex-1 border">
+      {{outlet}}
+    </div>
+    {{from-elsewhere name="modal-outlet"}}
+
+    {{#if (eq this.environment 'production')}}
+      <div class="fixed pin-t w-24 bg-blue-lighter text-center" style="left: 50%">
+        {{this.environment}}
+      </div>
+    {{else}}
+      <div class="fixed pin-t w-24 bg-red-lighter text-center" style="left: 50%">
+        {{this.environment}}
+      </div>
+    {{/if}}
   </div>
-  {{from-elsewhere name="modal-outlet"}}
 
-  {{#if (eq this.environment 'production')}}
-    <div class="fixed pin-t w-24 bg-blue-lighter text-center" style="left: 50%">
-      {{this.environment}}
-    </div>
-  {{else}}
-    <div class="fixed pin-t w-24 bg-red-lighter text-center" style="left: 50%">
-      {{this.environment}}
-    </div>
+  {{#if this.showModal}}
+    <Modal @close={{action (mut this.showModal) false}}>
+      <Typeahead
+        @choose={{bind this.goToPage}}
+        @options={{this.data.pages}}
+        @path="title"
+        @placeholder="Go to page..."
+      />
+    </Modal>
   {{/if}}
-</div>
 
-{{#if this.showModal}}
-  <Modal @close={{action (mut this.showModal) false}}>
-    <Typeahead
-      @choose={{bind this.goToPage}}
-      @options={{this.data.pages}}
-      @path="title"
-      @placeholder="Go to page..."
-    />
-  </Modal>
+  <Hotkeys
+    @priority=0
+    @handlers={{this.hotkeys}}
+  />
 {{/if}}
-
-<Hotkeys
-  @priority=0
-  @handlers={{this.hotkeys}}
-/>

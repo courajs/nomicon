@@ -1,11 +1,15 @@
 import Controller from '@ember/controller';
 import {inject} from '@ember/service';
+import {tracked} from '@glimmer/tracking';
 
 import {bound} from 'nomicon/lib/hotkeys';
 import env from 'nomicon/config/environment';
 
 export default Controller.extend({
+  auth: inject(),
   data: inject(),
+
+  clientId: tracked({value:''}),
 
   environment: env.environment,
   showModal: false,
@@ -22,5 +26,11 @@ export default Controller.extend({
   goToPage(p) {
     this.transitionToRoute('page', p.id);
     this.set('showModal', false);
+  },
+
+  authenticate(e) {
+    e.preventDefault();
+    this.auth.authenticateAs(this.clientId);
+    this.clientId = '';
   },
 });
