@@ -2,6 +2,7 @@ import Service, {inject} from '@ember/service';
 import Evented from '@ember/object/evented';
 import {tracked} from '@glimmer/tracking';
 import {task} from 'ember-concurrency';
+import {keepLatest} from 'nomicon/lib/concurrency';
 import {
   getFromCollection,
   writeToCollection,
@@ -30,34 +31,40 @@ export default Service.extend({
   },
 });
 
-export const Collection = EmberObject.extend(Evented, {
-  db: null,
-  id: null,
+export class Collection {
+  db = null;
+  id = null;
+  events = new EventTarget();
 
-  init() {
-    this._super(...arguments);
-    this.clock = {local:0,remote:0};
-    this.data = [];
-  },
+  @tracked clock = {local:0,remote:0};
+  @tracked data = [];
 
-  update: task(function* () {
+  @keepLatest
+  async update() {
     let {
       clock,
       values
-    } = yield getFromCollection(this.db, this.id, this.clock);
+    } = await getFromCollection(this.db, this.id, this.clock);
     this.clock = clock;
     this.data.push(...values);
     this.trigger('updated');
-  }).keepLatest(),
+  }
 
   async write(data) {
     if (!Array.isArray(data)) { throw new Error('pass an array'); }
     await writeToCollection(this.db, this.id, data);
     sw.send('update');
-  },
+  }
 
   async writeAndUpdate(data) {
     await this.write(data);
     return this.update();
-  },
-});
+  }
+
+  on() {
+    this.events.addEventListener(...arguments);
+  }
+  trigger(name) {
+    this.events.dispatchEvent(new Event(name));
+  }
+}
