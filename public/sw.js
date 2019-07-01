@@ -7,7 +7,7 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
   var idb__default = 'default' in idb ? idb['default'] : idb;
   io = io && io.hasOwnProperty('default') ? io['default'] : io;
 
-  const DB_NAME = 'docs';
+  const DB_NAME = 'connote';
   const DB_VERSION = 1;
   async function upgrade(db, oldVersion, newVersion, tx) {
     [].forEach.call(db.objectStoreNames, n => db.deleteObjectStore(n));

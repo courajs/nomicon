@@ -1,21 +1,25 @@
-import Service, {inject} from '@ember/service';
+import Service, {inject as service} from '@ember/service';
 import {tracked} from '@glimmer/tracking';
 
-export default Service.extend({
-  idb: inject(),
-  sw: inject(),
+export default class Auth extends Service {
+  @service idb;
+  @service sw;
 
-  authState: tracked({value:'pending'}),
-  clientId: tracked({value:null}),
+  @tracked authState = 'pending';
+  @tracked clientId;
 
-  async init() {
-    this._super(...arguments);
+  constructor() {
+    super(...arguments);
     
     this.sw.on('authed', (as) => {
       this.authState = 'authed';
       this.clientId = as;
     });
 
+    this._checkForId();
+  }
+
+  async _checkForId() {
     let db = await this.idb.db;
     let id = await db.get('meta', 'client_id');
     if (id) {
@@ -24,9 +28,9 @@ export default Service.extend({
     } else {
       this.authState = 'unauthed';
     }
-  },
+  }
 
   authenticateAs(id) {
     this.sw.send({kind:'auth',value:id});
   }
-});
+}
