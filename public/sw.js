@@ -140,36 +140,39 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
     let socket = await self.pock;
     await self.authed;
     let client_id = self.id;
-
+  
     let tx = db.transaction(['clocks', 'data']);
     let clocks = await tx.objectStore('clocks').getAll();
     let data = tx.objectStore('data');
-
-    let if_acked = {};
-
+  
+    let if_acked = [];
+  
     let reqs = clocks
       .filter(c=>c.last_local>c.synced_local) // collections with new data to sync
       .map(c => {
-        if_acked[c.collection] = c.last_local;
+        if_acked.push([c.collection, c.last_local]);
         let from = [c.collection, client_id, c.synced_local];
         let to = [c.collection,client_id,c.last_local];
         return data.getAll(IDBKeyRange.bound(from,to,true,false));
       }); // everyting after synced_local, for that collection
-
+  
     let sets = await Promise.all(reqs);
     if (sets.length === 0) { return; }
-
+  
     socket.emit('tell', [].concat(...sets), async function() {
       console.log('ack', if_acked);
       let tx = db.transaction(['clocks'], 'readwrite');
       let clocks = tx.objectStore('clocks');
-      let current_clocks = await Promise.all(Object.keys(if_acked).map(collection => clocks.get(collection)));
-      for (let c of current_clocks) {
-        c.synced_local = Math.max(c.synced_local, if_acked[c.collection]);
-        clocks.put(c);
-      }
+      await Promise.all(if_acked.map(async function([collection,acked]) {
+        let current = await clocks.get(collection);
+        if (acked > current.synced_local) {
+          current.synced_local = acked;
+          await clocks.put(current);
+        }
+      }));
     });
   };
+
 
   // server replies with a 'tell' event, so most of the hard stuff
   // is in there
@@ -177,8 +180,7 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
     let db = await self.dbp;
     let socket = await self.pock;
     let clocks = await db.getAll('clocks');
-    let ask = {};
-    clocks.forEach(c => ask[c.collection] = c.synced_remote);
+    let ask = clocks.map(c => { return {collection: c.collection, from: c.synced_remote}; });
     socket.emit('ask', ask);
   };
 
@@ -190,32 +192,31 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
   // we query for updates.
   // finally, we broadcast that there's an update to all connected tabs.
   // they're responsible for reading from indexeddb themselves
-  self.handleTell = async function(received) {
+  self.handleTell = async function(updates) {
     let db = await self.dbp;
     await self.authed;
     let client_id = self.id;
 
     let tx = db.transaction(['clocks','data'], 'readwrite');
     let data = tx.objectStore('data');
-
-    // save the messages, and keep track of the max server_index for each collection
-    let latests = {};
-    for (let d of received) {
-      data.put(d);
-      if (d.collection in latests) {
-        latests[d.collection] = Math.max(latests[d.collection], d.server_index);
-      } else {
-        latests[d.collection] = d.server_index;
-      }
-    }
-
-    // update clocks for each collection
     let clocks = tx.objectStore('clocks');
-    let current_clocks = await Promise.all(Object.keys(latests).map(collection => clocks.get(collection)));
-    for (let c of current_clocks) {
-      c.synced_remote = Math.max(c.synced_remote, latests[c.collection]);
-      clocks.put(c);
-    }
+
+    await Promise.all(updates.map(async function({collection, values}) {
+      let clock = await clocks.get(collection);
+      let latest = 0;
+      let puts = [];
+      for (let d of values) {
+        puts.push(data.put(d));
+        if (d.server_index > latest) {
+          latest = d.server_index;
+        }
+      }
+      if (latest > clock.synced_remote) {
+        clock.synced_remote = latest;
+        puts.push(clocks.put(clock));
+      }
+      return Promise.all(puts);
+    }));
 
     // notify connected tabs
     self.broadcast({kind:'update'});
