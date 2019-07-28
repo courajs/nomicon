@@ -5,6 +5,7 @@ import {task} from 'ember-concurrency';
 
 import {makeStore} from 'nomicon/lib/store';
 
+
 export default Service.extend({
   init() {
     this._super(...arguments);

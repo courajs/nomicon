@@ -10,10 +10,18 @@ export default class Auth extends Service {
 
   constructor() {
     super(...arguments);
+
+    this.awaitAuth = new Promise((resolve) => {
+      this._authed = resolve;
+    });
+    this.awaitAuthChecked = new Promise((resolve) => {
+      this._authChecked = resolve;
+    });
     
     this.sw.on('authed', (as) => {
       this.authState = 'authed';
       this.clientId = as;
+      this._authed();
     });
 
     this._checkForId();
@@ -25,9 +33,11 @@ export default class Auth extends Service {
     if (id) {
       this.authState = 'authed';
       this.clientId = id;
+      this._authed();
     } else {
       this.authState = 'unauthed';
     }
+    this._authChecked();
   }
 
   authenticateAs(id) {

@@ -1,7 +1,8 @@
-import Service, {inject} from '@ember/service';
+import Service, {inject as service} from '@ember/service';
 import Evented from '@ember/object/evented';
 import {tracked} from '@glimmer/tracking';
 import {task} from 'ember-concurrency';
+import {EquivMap} from '@thi.ng/associative';
 import {keepLatest} from 'nomicon/lib/concurrency';
 import {
   getFromCollection,
@@ -10,34 +11,39 @@ import {
 } from 'nomicon/lib/idb';
 
 
-export default Service.extend({
-  idb: inject(),
+export default class Sync extends Service {
+  @service idb;
+  @service sw;
 
-  async notifyCollection(id) {
-    let db = await dbp;
+  _id_map = new EquivMap();
+
+  liveCollection(id) {
+    let current = this._id_map.get(id);
+    if (current) { return current; }
+
+    let db = await idb.db;
 
     await ensureClockForCollection(db, id);
-    sw.send('ask');
+    this.sw.send('ask');
 
-    let c = new Collection(db, id);
-    await c.update();
-    sw.on('update', ()=>c.trigger('updateAvailable'));
+    let c = new LiveCollection(db, id);
+    this.sw.on('update', ()=>c.update());
+    c.update();
+    this._id_map.set(id, c);
     return c;
-  },
+ }
+}
 
-  async liveCollection(id) {
-    let c = this.notifyCollection(id);
-    c.on('updateAvailable', ()=>c.update());
-  },
-});
-
-export class Collection {
-  db = null;
-  id = null;
-  events = new EventTarget();
-
-  @tracked clock = {local:0,remote:0};
+class LiveCollection {
+  db;
+  id;
+  clock = {local:0,remote:0};
   @tracked data = [];
+
+  constructor(db, id) {
+    this.db = db;
+    this.id = id;
+  }
 
   @keepLatest
   async update() {
@@ -47,24 +53,13 @@ export class Collection {
     } = await getFromCollection(this.db, this.id, this.clock);
     this.clock = clock;
     this.data.push(...values);
-    this.trigger('updated');
+    this.data = this.data;
   }
 
-  async write(data) {
-    if (!Array.isArray(data)) { throw new Error('pass an array'); }
-    await writeToCollection(this.db, this.id, data);
+  async write(values) {
+    if (!Array.isArray(values)) { throw new Error('pass an array'); }
+    await writeToCollection(this.db, this.id, values);
     sw.send('update');
-  }
-
-  async writeAndUpdate(data) {
-    await this.write(data);
     return this.update();
-  }
-
-  on() {
-    this.events.addEventListener(...arguments);
-  }
-  trigger(name) {
-    this.events.dispatchEvent(new Event(name));
   }
 }
