@@ -6,6 +6,7 @@ export function keepLatest(target,key,desc) {
     get() {
       let running = false;
       let again = false;
+      let that = this;
 
       async function f() {
         if (running) {
@@ -13,7 +14,7 @@ export function keepLatest(target,key,desc) {
           return;
         }
         running = true;
-        await desc.value.apply(this, arguments);
+        await desc.value.apply(that, arguments);
         running = false;
         if (again) {
           again = false;
