@@ -17,11 +17,11 @@ export default class Sync extends Service {
 
   _id_map = new EquivMap();
 
-  liveCollection(id) {
+  async liveCollection(id) {
     let current = this._id_map.get(id);
     if (current) { return current; }
 
-    let db = await idb.db;
+    let db = await this.idb.db;
 
     await ensureClockForCollection(db, id);
     this.sw.send('ask');

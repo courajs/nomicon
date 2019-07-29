@@ -10,6 +10,7 @@ Router.map(function() {
   this.route('home');
   this.route('new');
   this.route('page', { path: '/page/:page_id' });
+  this.route('thing');
 });
 
 export default Router;
