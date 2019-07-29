@@ -1,4 +1,4 @@
-import {cmp, eq, lt} from './ids.js';
+import {cmp, eq, lt} from './ids';
 
 export class Graph {
   constructor(id, atoms) {

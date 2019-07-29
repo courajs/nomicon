@@ -1,28 +1,30 @@
 import Service, {inject as service} from '@ember/service';
-import {alias, or} from '@ember/object/computed';
+import {tracked} from '@glimmer/tracking';
 import Graph from 'nomicon/lib/ordts/graph';
 
 export default class GraphService extends Service {
   @service sync;
   @service auth;
 
-  @tracked collection;
+  _graph;
+  @tracked graph;
 
   constructor() {
     this.init();
   }
 
   async init() {
-    this.collection = await this.sync.liveCollection('graph');
-    this.graph = new Graph(this.auth.clientId, []);
+    let updates = await this.sync.liveCollection('graph');
+    this._graph = graphFromCollection(this.auth.clientId, updates);
+    this._graph.subscribe({
+      next: (g) => {
+        this.graph = g;
+      }
+    });
   }
 
   get graph() {
-    let g = new Graph(this.auth.clientId, []);
-    if (this.collection) {
-      g.mergeAtoms(this.collection.data);
-    }
-    return g.evaluate();
+    return this._graph.evaluate();
   }
 
   get titleCollections() {
@@ -33,4 +35,16 @@ export default class GraphService extends Service {
 
   get pages() {
   }
+}
+
+function graphFromCollection(clientId, collectionUpdateObservable) {
+  let graph = new Graph(clientId, []);
+  let subject = new Subject();
+  collectionUpdateObservable.subscribe({
+    next: (update)=> {
+      graph.mergeAtoms(update);
+      subject.next(graph);
+    }
+  });
+  return subject;
 }

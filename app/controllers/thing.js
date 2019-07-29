@@ -6,27 +6,34 @@ import * as rxjs from 'rxjs';
 
 window.rxjs = rxjs;
 
-let backing = [1,2,3];
-
 export default class extends Controller {
   @service sync;
+  @service graph;
   
+  @tracked thing = "";
   @tracked collection;
-  @tracked latest = [];
-
-  constructor() {
-    super(...arguments);
-    this.init();
-  }
+  @tracked items = [];
 
   async init() {
-    this.collection = await this.sync.liveCollection('tester');
+    this.collection = await this.sync.liveCollection('test2');
     this.collection.subscribe({
-      next: (val) => {
-        this.latest = val;
+      next: (update) => {
+        this.items = this.items.concat(update);
       }
     });
   }
 
-  doClick() {}
+  get things() {
+    return this.items.sort((b,a) => a.at - b.at).map(x=>x.message);
+  }
+
+  addThing(e) {
+    e.preventDefault();
+    let item = {
+      at: new Date().valueOf(),
+      message: this.thing,
+    };
+    this.thing = '';
+    this.collection.write([item]);
+  }
 }

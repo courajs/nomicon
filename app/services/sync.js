@@ -1,10 +1,10 @@
 import Service, {inject as service} from '@ember/service';
 import Evented from '@ember/object/evented';
-import {tracked} from '@glimmer/tracking';
 import {task} from 'ember-concurrency';
 import {Observable,Subject} from 'rxjs';
 import {EquivMap} from '@thi.ng/associative';
 import {keepLatest} from 'nomicon/lib/concurrency';
+import {CatchUpSubject} from 'nomicon/lib/observables';
 import {
   getFromCollection,
   writeToCollection,
@@ -18,30 +18,35 @@ export default class Sync extends Service {
 
   _id_map = new EquivMap();
 
-  constructor() {
-    super(...arguments);
+  notifier = new Subject();
+
+  init() {
     window.syncService = this;
+    this.notifier.subscribe(this.sw.outgoing);
   }
 
   async liveCollection(id) {
     let db = await this.idb.db;
 
     return getOrCreate(this._id_map, id, ()=>{
-      let updater = new ArrayUpdatesManager(db, id);
+      let collection = new CollectionConnection(db, id);
+      collection.notifications.subscribe(this.notifier);
       ensureClockForCollection(db, id)
         .then(() => {
-          this.sw.on('update', ()=>updater.update());
+          this.sw.on('update').forEach(()=>collection.update());
           this.sw.send('ask');
-          return updater.update();
+          collection.update();
         });
-      return updater.subject;
+      return collection;
     });
   }
 
+  /*
   async directWrite(collection, value) {
     await writeToCollection(await this.idb.db, collection, [value]);
     this.sw.send('update');
   }
+  //*/
 }
 
 function getOrCreate(map, id, creator) {
@@ -53,13 +58,13 @@ function getOrCreate(map, id, creator) {
   return val;
 }
 
-class ArrayUpdatesManager {
-  db;
-  id;
-  subject = new Subject();
+class CollectionConnection {
+  db; id; notify;
+  values = new CatchUpSubject();
+  notifications = new Subject();
   clock = {local:0,remote:0};
 
-  constructor(db, id, observer) {
+  constructor(db, id) {
     this.db = db;
     this.id = id;
   }
@@ -72,37 +77,18 @@ class ArrayUpdatesManager {
     } = await getFromCollection(this.db, this.id, this.clock);
     this.clock = clock;
     if (values.length) {
-      this.subject.next(values);
+      this.values.next(values);
     }
-  }
-}
-
-class LiveCollection {
-  db;
-  id;
-  clock = {local:0,remote:0};
-  @tracked data = [];
-
-  constructor(db, id) {
-    this.db = db;
-    this.id = id;
-  }
-
-  @keepLatest
-  async update() {
-    let {
-      clock,
-      values
-    } = await getFromCollection(this.db, this.id, this.clock);
-    this.clock = clock;
-    this.data.push(...values);
-    this.data = this.data;
   }
 
   async write(values) {
     if (!Array.isArray(values)) { throw new Error('pass an array'); }
     await writeToCollection(this.db, this.id, values);
-    sw.send('update');
+    this.notifications.next('update');
     return this.update();
+  }
+
+  subscribe(observer) {
+    return this.values.subscribe(observer);
   }
 }

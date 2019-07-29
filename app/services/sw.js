@@ -1,6 +1,6 @@
 import Service, {inject} from '@ember/service';
-import {Subject} from 'rxjs';
-import {fromEvent, filter, map} from 'rxjs/operators';
+import {Subject, fromEvent} from 'rxjs';
+import {filter, map} from 'rxjs/operators';
 
 export const ready = navigator.serviceWorker.ready.then(function(reg) {
   if (!navigator.serviceWorker.controller) {
@@ -32,30 +32,36 @@ export const ready = navigator.serviceWorker.ready.then(function(reg) {
 });
 
 export default class extends Service {
-  events = new Subject();
+  incoming = new Subject();
+  outgoing = new Subject();
 
   init() {
     fromEvent(navigator.serviceWorker, 'message', e => e.data)
-      .subscribe(events);
+      .subscribe(this.incoming);
+    this.outgoing.subscribe({
+      next(e) {
+        if (!navigator.serviceWorker.controller) {
+          throw new Error('No controlling service worker!');
+        }
+        navigator.serviceWorker.controller.postMessage(e);
+      }
+    });
   }
 
   // event data comes through as a simple string (the event name),
   // or a two-element array [eventName, payload].
   on(eventName) {
-    return this.events.pipe(
+    return this.incoming.pipe(
         filter(d => d === eventName || Array.isArray(d) && d[0] === eventName),
         map(d => Array.isArray(d) ? d[1] : null)
     );
-  },
+  }
 
   send(eventName, data) {
-    if (!navigator.serviceWorker.controller) {
-      throw new Error('No controlling service worker!');
-    }
-    if (data) {
-      navigator.serviceWorker.controller.postMessage([eventName,data]);
+    if (data === undefined) {
+      this.outgoing.next(eventName);
     } else {
-      navigator.serviceWorker.controller.postMessage(eventName);
+      this.outgoing.next([eventName, data]);
     }
   }
 }
