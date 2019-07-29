@@ -1,5 +1,6 @@
 import Service, {inject as service} from '@ember/service';
 import {tracked} from '@glimmer/tracking';
+import {first} from 'rxjs/operators';
 
 export default class Auth extends Service {
   @service idb;
@@ -8,9 +9,7 @@ export default class Auth extends Service {
   @tracked authState = 'pending';
   @tracked clientId;
 
-  constructor() {
-    super(...arguments);
-
+  init() {
     this.awaitAuth = new Promise((resolve) => {
       this._authed = resolve;
     });
@@ -18,7 +17,7 @@ export default class Auth extends Service {
       this._authChecked = resolve;
     });
     
-    this.sw.on('authed', (as) => {
+    this.sw.on('authed').pipe(first()).toPromise().then((as) => {
       this.authState = 'authed';
       this.clientId = as;
       this._authed();
@@ -41,6 +40,6 @@ export default class Auth extends Service {
   }
 
   authenticateAs(id) {
-    this.sw.send({kind:'auth',value:id});
+    this.sw.send('auth', id);
   }
 }

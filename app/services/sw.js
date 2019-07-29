@@ -1,4 +1,6 @@
 import Service, {inject} from '@ember/service';
+import {Subject} from 'rxjs';
+import {fromEvent, filter, map} from 'rxjs/operators';
 
 export const ready = navigator.serviceWorker.ready.then(function(reg) {
   if (!navigator.serviceWorker.controller) {
@@ -29,34 +31,31 @@ export const ready = navigator.serviceWorker.ready.then(function(reg) {
   setInterval(() => send('keepawake'), 25000);
 });
 
-export default Service.extend({
-  idb: inject(),
+export default class extends Service {
+  events = new Subject();
 
-  handlers: new WeakMap(),
+  init() {
+    fromEvent(navigator.serviceWorker, 'message', e => e.data)
+      .subscribe(events);
+  }
 
-  on(eventName, handler) {
-    function h(event) {
-      if (typeof event.data === 'string' && event.data === eventName) {
-        handler(event);
-      } else if (event.data.kind === eventName) {
-        handler(event.data.value, event);
-      }
-    }
-    this.handlers.set(handler, h);
-    navigator.serviceWorker.addEventListener('message', h);
+  // event data comes through as a simple string (the event name),
+  // or a two-element array [eventName, payload].
+  on(eventName) {
+    return this.events.pipe(
+        filter(d => d === eventName || Array.isArray(d) && d[0] === eventName),
+        map(d => Array.isArray(d) ? d[1] : null)
+    );
   },
 
-  off(handler) {
-    let h = this.handlers.get(handler);
-    if (h) {
-      navigator.serviceWorker.removeEventListener('message', h);
-    }
-  },
-
-  send(data) {
+  send(eventName, data) {
     if (!navigator.serviceWorker.controller) {
       throw new Error('No controlling service worker!');
     }
-    navigator.serviceWorker.controller.postMessage(data);
+    if (data) {
+      navigator.serviceWorker.controller.postMessage([eventName,data]);
+    } else {
+      navigator.serviceWorker.controller.postMessage(eventName);
+    }
   }
-});
+}
