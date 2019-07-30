@@ -1,9 +1,1 @@
-<form onsubmit={{action addThing}}>
-  {{input value=this.thing class="shadow appearance-none border rounded py-2 px-3 text-gray leading-tight m-3"}}
-</form>
-
-<ul>
-  {{#each this.things as |item|}}
-    <li>{{item}}</li>
-  {{/each}}
-</ul>
+{{textarea class="border rounded m-4" value=this.sequence.value}}
