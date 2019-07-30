@@ -19,5 +19,8 @@ export default class LiveSequence {
   }
 
   become(s) {
+    let fresh = this.sequence.become(s);
+    this.value = this.sequence.evaluate();
+    return this.collection.write(fresh);
   }
 }

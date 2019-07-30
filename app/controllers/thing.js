@@ -19,4 +19,8 @@ export default class extends Controller {
     this.collection = await this.sync.liveCollection('test3');
     this.sequence = new LiveSequence(this.collection, this.auth.clientId);
   }
+
+  update(e) {
+    this.sequence.become(this.sequence.value);
+  }
 }
