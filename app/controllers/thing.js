@@ -16,7 +16,8 @@ export default class extends Controller {
   @tracked sequence;
 
   async init() {
-    this.collection = await this.sync.liveCollection('test3');
+    this.collection = await this.sync.liveCollection('test4');
+    await this.auth.awaitAuth;
     this.sequence = new LiveSequence(this.collection, this.auth.clientId);
   }
 
