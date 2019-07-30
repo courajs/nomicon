@@ -51,7 +51,7 @@ export class Sequence {
       site: this.id,
       index: ++this.currentIndex,
       lamport: ++this.currentLamport,
-      wall: new Date().valueOf(),
+      wall: Date.now(),
     };
   }
 

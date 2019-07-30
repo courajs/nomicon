@@ -41,7 +41,7 @@ export default class Sync extends Service {
     });
   }
 
-  /*
+  //*
   async directWrite(collection, value) {
     await writeToCollection(await this.idb.db, collection, [value]);
     this.sw.send('update');

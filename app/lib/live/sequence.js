@@ -9,12 +9,13 @@ export default class LiveSequence {
   constructor(collection, clientId) {
     this.collection = collection;
     this.sequence = new Sequence(clientId, []);
-    collection.subscribe(this);
-  }
-
-  next(update) {
-    this.sequence.mergeAtoms(update);
-    this.value = this.sequence.evaluate();
+    collection.subscribe({
+      next: (update) => {
+        this.sequence.mergeAtoms(update);
+        this.value = this.sequence.evaluate();
+      }
+    });
+    window.thing = this;
   }
 
   become(s) {

@@ -11,6 +11,7 @@ Router.map(function() {
   this.route('new');
   this.route('page', { path: '/page/:page_id' });
   this.route('thing');
+  this.route('inject');
 });
 
 export default Router;
