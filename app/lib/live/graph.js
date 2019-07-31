@@ -15,6 +15,7 @@ export default class LiveGraph {
     this.graph = new Graph(clientId, []);
     this.sync.liveCollection(id)
       .then(updates => {
+        this.collection = updates;
         updates.subscribe({
           next: update => {
             this.graph.mergeAtoms(update);
@@ -47,6 +48,13 @@ export default class LiveGraph {
   getPage(uuid) {
     this.ensurePage(uuid);
     return this.idMap.get(uuid);
+  }
+
+  async newPage() {
+    let atom = this.graph.addNode();
+    let {uuid} = atom;
+    await this.collection.write([atom]);
+    return this.getPage(uuid);
   }
 }
 

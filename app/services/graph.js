@@ -14,7 +14,6 @@ export default class GraphService extends Service {
   }
 
   get pages() {
-    console.log('pages');
     if (this.graph) {
       return this.graph.pages;
     } else {
@@ -24,7 +23,12 @@ export default class GraphService extends Service {
 
   async getPage(page_id) {
     await this.auth.awaitAuth;
-    await this.graph.syncedOnce;
     return this.graph.getPage(page_id);
+  }
+
+  async newPage() {
+    await this.auth.awaitAuth;
+    await this.graph.syncedOnce;
+    return this.graph.newPage();
   }
 }

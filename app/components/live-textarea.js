@@ -8,17 +8,17 @@ export default class extends Component {
   @service auth;
   @service sync;
   
-  @tracked collection
-  @tracked sequence;
+  _prevCollection
+  _prevSeq;
 
-  constructor() {
-    super(...arguments);
-    this.init();
-  }
-
-  async init() {
-    await this.auth.awaitAuth;
-    this.sequence = new LiveSequence(this.sync, this.auth.clientId, this.args.collection);
+  get sequence() {
+    if (this.args.collection === this._prevCollection) {
+      return this._prevSeq;
+    } else {
+      this._prevCollection = this.args.collection;
+      this._prevSeq = new LiveSequence(this.sync, this.auth.clientId, this.args.collection);
+      return this._prevSeq;
+    }
   }
 
   update(e) {

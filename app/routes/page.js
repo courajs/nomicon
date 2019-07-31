@@ -6,6 +6,7 @@ export default Route.extend({
   graph: inject(),
 
   async model({page_id}) {
+    console.log('model');
     return this.graph.getPage(page_id);
   }
 });

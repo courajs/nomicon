@@ -74,6 +74,7 @@ export class Graph {
       let there = atoms[theirs];
       // skip duplicates
       if (eq(here.id, there.id)) {
+        result.push(here);
         ours++;
         theirs++;
       } else if (lt(here.id, there.id)) {
