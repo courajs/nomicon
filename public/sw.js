@@ -1,5 +1,5 @@
-importScripts('https://unpkg.com/socket.io-client@2.2.0/dist/socket.io.slim.dev.js');
-importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
+importScripts('/v/unpkg.com/socket.io-client@2.2.0/dist/socket.io.slim.dev.js');
+importScripts('/v/unpkg.com/idb@4.0.3/build/iife/index-min.js');
 
 (function (idb, io) {
   'use strict';
@@ -14,8 +14,8 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
 
     let meta = db.createObjectStore('meta');
 
-    let clocks = db.createObjectStore('clocks', {keyPath:'collection'});
-    clocks.createIndex('uniq', 'collection', {unique: true});
+    let clocks = db.createObjectStore('clocks', {keyPath:['collection']});
+    clocks.createIndex('uniq', ['collection'], {unique: true});
     clocks.add({
       collection: 'index',
       synced_remote: 0,
@@ -65,24 +65,40 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
     if (self.handlers.message) {
       self.handlers.message.forEach(h => h(event));
     }
-    if (event.data.kind && self.handlers[event.data.kind]) {
-      self.handlers[event.data.kind].forEach(h => h(event.data.value, event));
-    }
-    if (typeof event.data === 'string' && event.data in self.handlers) {
-      self.handlers[event.data].forEach(h => h(event));
+
+    if (Array.isArray(event.data)) {
+      let [kind,data] = event.data;
+      if (self.handlers[kind]) {
+        self.handlers[kind].forEach(h => h(data, event));
+      }
+    } else if (typeof event.data === 'string') {
+      let kind = event.data;
+      if (self.handlers[kind]) {
+        self.handlers[kind].forEach(h => h(event));
+      }
+    } else {
+      throw new Error('invalid message event data: '+JSON.stringify(event.data));
     }
   });
 
   // comms to connected client tabs
-  self.broadcast = async function(msg) {
+  self.broadcast = async function(kind, data) {
     let clients = await self.clients.matchAll({type:'window'});
-    clients.forEach(c=>c.postMessage(msg));
+    if (data === undefined) {
+      clients.forEach(c=>c.postMessage(kind));
+    } else {
+      clients.forEach(c=>c.postMessage([kind,data]));
+    }
   };
-  self.broadcastOthers = async function(msg, tab_id) {
+  self.broadcastOthers = async function(tab_id, kind, data) {
     let clients = await self.clients.matchAll({type:'window'});
     for (let c of clients) {
       if (c.id !== tab_id) {
-        c.postMessage('update');
+        if (data === undefined) {
+          c.postMessage(kind);
+        } else {
+          c.postMessage([kind,data]);
+        }
       }
     }
   };
@@ -102,7 +118,9 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
     resolve(db);
   });
   self.inited = new Promise(function(resolve) {
-    self.once('init', resolve);
+    self.once('init', function() {
+      resolve();
+    });
   });
   self.authed = new Promise(async function(resolve) {
     self.resolveAuth = (id) => {
@@ -164,7 +182,7 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
       let tx = db.transaction(['clocks'], 'readwrite');
       let clocks = tx.objectStore('clocks');
       await Promise.all(if_acked.map(async function([collection,acked]) {
-        let current = await clocks.get(collection);
+        let current = await clocks.get([collection]);
         if (acked > current.synced_local) {
           current.synced_local = acked;
           await clocks.put(current);
@@ -202,7 +220,7 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
     let clocks = tx.objectStore('clocks');
 
     await Promise.all(updates.map(async function({collection, values}) {
-      let clock = await clocks.get(collection);
+      let clock = await clocks.get([collection]);
       let latest = 0;
       let puts = [];
       for (let d of values) {
@@ -219,7 +237,7 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
     }));
 
     // notify connected tabs
-    self.broadcast({kind:'update'});
+    self.broadcast('update');
   };
 
 
@@ -243,7 +261,7 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
 
   self.on('update', async function(event) {
     // broadcast to other tabs
-    self.broadcastOthers('update', event.source.id);
+    self.broadcastOthers(event.source.id, 'update');
     
     // send update to server
     self.syncOwn();
@@ -259,7 +277,7 @@ importScripts('https://unpkg.com/idb@4.0.3/build/iife/index-min.js');
     socket.disconnect();
     socket.connect();
     console.log('sending authed');
-    await self.broadcast({kind:'authed',value:name});
+    await self.broadcast('authed', name);
   };
 
   self.on('auth', self.auth);

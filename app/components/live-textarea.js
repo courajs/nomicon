@@ -17,10 +17,8 @@ export default class extends Component {
   }
 
   async init() {
-    console.log('init');
-    this.collection = await this.sync.liveCollection(this.args.collection);
     await this.auth.awaitAuth;
-    this.sequence = new LiveSequence(this.collection, this.auth.clientId);
+    this.sequence = new LiveSequence(this.sync, this.auth.clientId, this.args.collection);
   }
 
   update(e) {

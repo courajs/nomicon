@@ -7,8 +7,8 @@ export async function upgrade(db, oldVersion, newVersion, tx) {
 
   let meta = db.createObjectStore('meta');
 
-  let clocks = db.createObjectStore('clocks', {keyPath:'collection'});
-  clocks.createIndex('uniq', 'collection', {unique: true});
+  let clocks = db.createObjectStore('clocks', {keyPath:['collection']});
+  clocks.createIndex('uniq', ['collection'], {unique: true});
   clocks.add({
     collection: 'index',
     synced_remote: 0,
@@ -42,7 +42,7 @@ export async function getFromCollection(db, collection, since) {
   let remote_to = [collection, Infinity];
   let remotes = data.index('remote').getAll(IDBKeyRange.bound(remote_from, remote_to, true, true));
 
-  let clock = await tx.objectStore('clocks').get(collection);
+  let clock = await tx.objectStore('clocks').get([collection]);
   locals = await locals;
   remotes = await remotes;
   return {
@@ -54,7 +54,7 @@ export async function getFromCollection(db, collection, since) {
 export async function writeToCollection(db, collection, items) {
   let tx = db.transaction(['meta', 'clocks', 'data'], 'readwrite');
   let client_id = await tx.objectStore('meta').get('client_id');
-  let clock = await tx.objectStore('clocks').get(collection);
+  let clock = await tx.objectStore('clocks').get([collection]);
   let msg_store = tx.objectStore('data');
 
   items.map(v => {

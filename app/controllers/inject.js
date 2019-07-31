@@ -38,6 +38,30 @@ export default class extends Controller {
     },
   }
 }`],
+
+['Graph node', `{
+  id: {
+    site: 'chromicon',
+    index: 1,
+    lamport: 1,
+    wall: Date.now(),
+  },
+  type: 'node',
+  uuid: Math.random().toString(),
+}`],
+
+['Graph edge', `{
+  id: {
+    site: 'chromicon',
+    index: 2,
+    lamport: 2,
+    wall: Date.now(),
+  },
+  type: 'edge',
+  uuid: Math.random().toString(),
+  from: 'a',
+  to: 'b',
+}`],
   ]);
 
   @tracked collectionName = '';

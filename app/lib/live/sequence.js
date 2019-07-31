@@ -6,16 +6,20 @@ export default class LiveSequence {
   sequence;
   @tracked value = '';
 
-  constructor(collection, clientId) {
-    this.collection = collection;
+  constructor(sync, clientId, id) {
+    this.sync = sync;
     this.sequence = new Sequence(clientId, []);
-    collection.subscribe({
-      next: (update) => {
-        this.sequence.mergeAtoms(update);
-        this.value = this.sequence.evaluate();
-      }
-    });
-    window.thing = this;
+
+    sync.liveCollection(id)
+      .then(updates => {
+        this.collection = updates;
+        updates.subscribe({
+          next: (update) => {
+            this.sequence.mergeAtoms(update);
+            this.value = this.sequence.evaluate();
+          }
+        });
+      });
   }
 
   become(s) {

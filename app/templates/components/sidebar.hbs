@@ -35,8 +35,8 @@
 
 <h2>All pages</h2>
 <ul class="mt-4 mb-12">
-  {{#each this.data.pages key="id" as |page|}}
-    <li>{{link-to (or page.title "<untitled>") 'page' page.id}}</li>
+  {{#each this.graph.pages key="uuid" as |page|}}
+    <li><PageLink @page={{page}} /></li>
   {{else}}
     <p class="text-grey-darker">&lt;none&gt;</p>
   {{/each}}

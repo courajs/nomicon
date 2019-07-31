@@ -2,12 +2,24 @@ import Service, {inject} from '@ember/service';
 import {Subject, fromEvent} from 'rxjs';
 import {filter, map} from 'rxjs/operators';
 
+if (!navigator.serviceWorker.controller) {
+  console.log('no controlling worker!');
+  setTimeout(()=>location.reload(), 500);
+}
+
 export const ready = navigator.serviceWorker.ready.then(function(reg) {
-  if (!navigator.serviceWorker.controller) {
-    console.log('no controlling worker!');
-    location.reload();
-  }
-  let send = (kind,value) => navigator.serviceWorker.controller.postMessage({kind,value});
+  console.log('ready');
+  let send = (kind,value) => {
+    if (!navigator.serviceWorker.controller) {
+      // it'll reload in a sec
+      return;
+    }
+    if (value === undefined) {
+      navigator.serviceWorker.controller.postMessage(kind);
+    } else {
+      navigator.serviceWorker.controller.postMessage([kind,value])
+    }
+  };
 
   // we want to avoid opening websockets and such for not-yet-active
   // service workers. buuuut you can't actually tell from inside the

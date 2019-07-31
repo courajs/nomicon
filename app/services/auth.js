@@ -6,6 +6,7 @@ export default class Auth extends Service {
   @service idb;
   @service sw;
 
+  awaitAuth; awaitAuthChecked;
   @tracked authState = 'pending';
   @tracked clientId;
 
@@ -27,6 +28,7 @@ export default class Auth extends Service {
   }
 
   async _checkForId() {
+    console.log('checking');
     let db = await this.idb.db;
     let id = await db.get('meta', 'client_id');
     if (id) {
@@ -37,6 +39,7 @@ export default class Auth extends Service {
       this.authState = 'unauthed';
     }
     this._authChecked();
+    console.log('checked');
   }
 
   authenticateAs(id) {
