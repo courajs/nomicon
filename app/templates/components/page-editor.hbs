@@ -2,30 +2,22 @@
   <label class="block text-grey-darker text-sm mb-2">
     <input
       type=checkbox
-      checked={{@page.home}}
-      {{did-insert (action this.addRef) 'home'}}
-      oninput={{perform this.update}}
     />
     Homepage?
   </label>
   <label for="title" class="block text-grey-darker text-sm mb-2">
     Title
   </label>
-  <input
-    {{did-insert (action this.addRef) 'title'}}
-    value={{@page.title}}
-    oninput={{perform this.update}}
-    id="title"
+  <LiveInput
+    @collection={{@page.titleCollection}}
     placeholder="Untitled"
     class="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker leading-tight focus:outline-none focus:shadow-outline" />
 </div>
 <div class="m-4">
-  <textarea
-    {{did-insert (action this.addRef) 'body'}}
-    value={{@page.body}}
-    oninput={{perform this.update}}
+  <LiveTextarea
+    @collection={{@page.bodyCollection}}
     placeholder="Blah blee bloop"
     rows="30"
     class="w-full shadow-inner p-4 border"
-  ></textarea>
+  />
 </div>

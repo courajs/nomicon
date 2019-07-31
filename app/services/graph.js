@@ -21,4 +21,10 @@ export default class GraphService extends Service {
       [];
     }
   }
+
+  async getPage(page_id) {
+    await this.auth.awaitAuth;
+    await this.graph.syncedOnce;
+    return this.graph.getPage(page_id);
+  }
 }

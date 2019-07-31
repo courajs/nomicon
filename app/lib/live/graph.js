@@ -8,6 +8,9 @@ export default class LiveGraph {
   @tracked pages = [];
 
   constructor(id, clientId, sync) {
+    this.syncedOnce = new Promise((resolve) => {
+      this.markSynced = resolve;
+    });
     this.sync = sync;
     this.graph = new Graph(clientId, []);
     this.sync.liveCollection(id)
@@ -16,6 +19,7 @@ export default class LiveGraph {
           next: update => {
             this.graph.mergeAtoms(update);
             this.calcPages();
+            this.markSynced();
           }
         });
       });
@@ -28,8 +32,8 @@ export default class LiveGraph {
       this.ensurePage(n);
     }
     for (let [uuid, p] of this.idMap) {
-      p.incomingUUIDs = result.incoming[uuid];
-      p.outgoingUUIDs = result.outgoing[uuid];
+      p.incomingUUIDs = result.incoming[uuid] || [];
+      p.outgoingUUIDs = result.outgoing[uuid] || [];
     }
     this.pages = Array.from(this.idMap.values());
   }
@@ -41,6 +45,7 @@ export default class LiveGraph {
   }
 
   getPage(uuid) {
+    this.ensurePage(uuid);
     return this.idMap.get(uuid);
   }
 }
@@ -51,8 +56,8 @@ export class LivePage {
   titleSequence; bodySequence;
   @tracked _title = '';
   @tracked _body = '';
-  @tracked incomingUUIDs;
-  @tracked outgoingUUIDs;
+  @tracked incomingUUIDs = [];
+  @tracked outgoingUUIDs = [];
 
   constructor(uuid, sync, graph, clientId) {
     this.uuid = uuid;
@@ -68,19 +73,22 @@ export class LivePage {
     return this.outgoingUUIDs.map(id => this.graph.getPage(id));
   }
 
+  get titleCollection() {
+    return ['page', this.uuid, 'title'];
+  }
+  get bodyCollection() {
+    return ['page', this.uuid, 'body'];
+  }
+
   get title() {
     if (!this.titleSequence) {
-      this.titleSequence = new LiveSequence(this.sync, this.clientId, [
-        'page', this.uuid, 'title',
-      ]);
+      this.titleSequence = new LiveSequence(this.sync, this.clientId, this.titleCollection);
     }
     return this.titleSequence.value;
   }
   get body() {
     if (!this.titleSequence) {
-      this.bodySequence = new LiveSequence(this.sync, this.clientId, [
-        'page', this.uuid, 'body',
-      ]);
+      this.bodySequence = new LiveSequence(this.sync, this.clientId, this.bodyCollection);
     }
     return this.bodySequence.value;
   }
