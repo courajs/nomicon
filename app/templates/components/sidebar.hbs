@@ -6,6 +6,7 @@
   </div>
 {{/link-to}}
 
+{{!--
 <h2>Homepages</h2>
 <ul class="mt-4 mb-12">
   {{#each this.data.homes key="id" as |page|}}
@@ -32,8 +33,9 @@
     <p class="text-grey-darker">&lt;none&gt;</p>
   {{/each}}
 </ul>
+--}}
 
-<h2>All pages</h2>
+<h2>Pages</h2>
 <ul class="mt-4 mb-12">
   {{#each this.graph.pages key="uuid" as |page|}}
     <li><PageLink @page={{page}} /></li>

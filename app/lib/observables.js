@@ -22,7 +22,9 @@ export class CatchUpSubject {
   }
 
   subscribe(observer) {
-    observer.next(this.values);
+    if (this.values.length) {
+      observer.next(this.values);
+    }
     return this._inner.subscribe(observer);
   }
 }
