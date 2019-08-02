@@ -37,6 +37,6 @@ export default class GraphService extends Service {
   }
 
   delete(uuid) {
-    this.graph.delete(uuid);
+    return this.graph.delete(uuid);
   }
 }

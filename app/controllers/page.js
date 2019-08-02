@@ -33,7 +33,7 @@ export default Controller.extend({
   modalSearchText: '',
 
   destroyPage: task(function* (page) {
-    yield this.data.destroyPage(page);
+    yield this.graph.delete(page.uuid);
     yield this.transitionToRoute('home');
   }),
 

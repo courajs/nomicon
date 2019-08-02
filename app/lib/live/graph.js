@@ -28,9 +28,14 @@ export default class LiveGraph {
   }
 
   calcPages() {
+    let existing = new Set(this.idMap.keys());
     let result = this.graph.evaluate();
     for (let n of result.nodes) {
       this.ensurePage(n);
+      existing.delete(n);
+    }
+    for (let old of existing) {
+      this.idMap.delete(old);
     }
     for (let [uuid, p] of this.idMap) {
       let incoming = result.incoming[uuid] || [];
