@@ -1,5 +1,6 @@
 import Controller from '@ember/controller';
 import {inject} from '@ember/service';
+import {computed} from '@ember/object';
 import {task, taskGroup, waitForProperty} from 'ember-concurrency';
 
 import {bound} from 'nomicon/lib/hotkeys';
@@ -56,7 +57,7 @@ export default Controller.extend({
     this.set('modalSearchText', searchText);
   },
 
-  get incoming() {
+  incoming: computed('model', function() {
     return this.model.incoming.slice().sort((a,b) => {
       a = a.from.title;
       b = b.from.title;
@@ -68,8 +69,8 @@ export default Controller.extend({
         return 0;
       }
     });
-  },
-  get outgoing() {
+  }),
+  outgoing: computed('model', function() {
     return this.model.outgoing.slice().sort((a,b) => {
       if (a.title > b.title) {
         return 1;
@@ -79,7 +80,7 @@ export default Controller.extend({
         return 0;
       }
     });
-  },
+  }),
 
   prompts: taskGroup().drop(),
 
@@ -108,9 +109,9 @@ export default Controller.extend({
     if (choice === CREATE) {
       let newPage = yield this.graph.newPage();
       yield newPage.titleSequence.become(this.modalSearchText);
-      yield this.graph.link(this.model.uuid, page.uuid);
+      yield this.graph.link(this.model.uuid, newPage.uuid);
       this.setProperties(MODAL_DEFAULTS);
-      return this.transitionToRoute('page', page.uuid);
+      return this.transitionToRoute('page', newPage.uuid);
     }
     yield this.graph.link(this.model.uuid, choice.uuid);
     this.setProperties(MODAL_DEFAULTS);
@@ -143,7 +144,7 @@ export default Controller.extend({
       yield newPage.titleSequence.become(this.modalSearchText);
       yield this.graph.link(newPage.uuid, this.model.uuid);
       this.setProperties(MODAL_DEFAULTS);
-      return this.transitionToRoute('page', page.uuid);
+      return this.transitionToRoute('page', newPage.uuid);
     }
     yield this.graph.link(choice.uuid, this.model.uuid);
     this.setProperties(MODAL_DEFAULTS);

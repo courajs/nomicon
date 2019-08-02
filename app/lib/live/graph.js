@@ -20,9 +20,9 @@ export default class LiveGraph {
           next: update => {
             this.graph.mergeAtoms(update);
             this.calcPages();
-            this.markSynced();
           }
         });
+        this.markSynced();
       });
     window.thelivegraph = this;
   }
