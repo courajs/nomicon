@@ -7,7 +7,7 @@ import env from 'nomicon/config/environment';
 
 export default Controller.extend({
   auth: inject(),
-  data: inject(),
+  graph: inject(),
 
   clientId: tracked({value:''}),
 
@@ -24,7 +24,7 @@ export default Controller.extend({
   }),
 
   goToPage(p) {
-    this.transitionToRoute('page', p.id);
+    this.transitionToRoute('page', p.uuid);
     this.set('showModal', false);
   },
 
