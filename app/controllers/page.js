@@ -17,6 +17,7 @@ const MODAL_DEFAULTS = {
 
 export default Controller.extend({
   data: inject(),
+  graph: inject(),
 
   //   ...MODAL_DEFAULTS,
   //   ^ this breaks an ESLint rule
@@ -53,6 +54,31 @@ export default Controller.extend({
   _modalChoice(choice, searchText) {
     this.set('modalChoice', choice);
     this.set('modalSearchText', searchText);
+  },
+
+  get incoming() {
+    return this.model.incoming.slice().sort((a,b) => {
+      a = a.from.title;
+      b = b.from.title;
+      if (a > b) {
+        return 1;
+      } else if (a < b) {
+        return -1;
+      } else {
+        return 0;
+      }
+    });
+  },
+  get outgoing() {
+    return this.model.outgoing.slice().sort((a,b) => {
+      if (a.title > b.title) {
+        return 1;
+      } else if (a.title < b.title) {
+        return -1;
+      } else {
+        return 0;
+      }
+    });
   },
 
   prompts: taskGroup().drop(),

@@ -33,8 +33,22 @@ export default class LiveGraph {
       this.ensurePage(n);
     }
     for (let [uuid, p] of this.idMap) {
-      p.incomingUUIDs = result.incoming[uuid] || [];
-      p.outgoingUUIDs = result.outgoing[uuid] || [];
+      let incoming = result.incoming[uuid] || [];
+      p.incoming = incoming.map(({uuid,from,to}) => {
+        return {
+          uuid,
+          from: this.idMap.get(from),
+          to: this.idMap.get(to),
+        };
+      });
+      let outgoing = result.outgoing[uuid] || [];
+      p.outgoing = outgoing.map(({uuid,from,to}) => {
+        return {
+          uuid,
+          from: this.idMap.get(from),
+          to: this.idMap.get(to),
+        }
+      });
     }
     this.pages = Array.from(this.idMap.values());
   }
@@ -56,6 +70,11 @@ export default class LiveGraph {
     await this.collection.write([atom]);
     return this.getPage(uuid);
   }
+
+  delete(uuid) {
+    let atom = this.graph.delete(uuid);
+    return this.collection.write([atom]);
+  }
 }
 
 export class LivePage {
@@ -64,21 +83,14 @@ export class LivePage {
   titleSequence; bodySequence;
   @tracked _title = '';
   @tracked _body = '';
-  @tracked incomingUUIDs = [];
-  @tracked outgoingUUIDs = [];
+  @tracked incoming = [];
+  @tracked outgoing = [];
 
   constructor(uuid, sync, graph, clientId) {
     this.uuid = uuid;
     this.sync = sync;
     this.graph = graph;
     this.clientId = clientId;
-  }
-
-  get incoming() {
-    return this.incomingUUIDs.map(id => this.graph.getPage(id));
-  }
-  get outgoing() {
-    return this.outgoingUUIDs.map(id => this.graph.getPage(id));
   }
 
   get titleCollection() {

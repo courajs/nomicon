@@ -31,4 +31,8 @@ export default class GraphService extends Service {
     await this.graph.syncedOnce;
     return this.graph.newPage();
   }
+
+  delete(uuid) {
+    this.graph.delete(uuid);
+  }
 }

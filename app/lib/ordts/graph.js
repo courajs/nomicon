@@ -51,14 +51,15 @@ export class Graph {
     nodes = Object.keys(nodes);
     let outgoing = {};
     let incoming = {};
-    for (let {from,to} of Object.values(edges)) {
+    for (let atom of Object.values(edges)) {
+      let {from,to} = atom;
       if (!nodes.includes(from) || !nodes.includes(to)) {
         continue;
       }
       if (!outgoing[from]) { outgoing[from] = []; }
-      outgoing[from].push(to);
+      outgoing[from].push(atom);
       if (!incoming[to]) { incoming[to] = []; }
-      incoming[to].push(from);
+      incoming[to].push(atom);
     }
     return {nodes, incoming, outgoing};
   }
@@ -117,6 +118,15 @@ export class Graph {
   // if uuid points to an edge, just mark it as deleted
   // if uuid points to a node, should we also mark all edges to/from it?
   // del(uuid) {}
+  delete(uuid) {
+    let atom = {
+      id: this.nextId(),
+      type: 'delete',
+      uuid,
+    };
+    this.mergeAtoms([atom]);
+    return atom;
+  }
 }
 
 export default Graph;
