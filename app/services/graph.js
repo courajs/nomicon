@@ -32,6 +32,10 @@ export default class GraphService extends Service {
     return this.graph.newPage();
   }
 
+  link(fromuuid, touuid) {
+    return this.graph.link(fromuuid, touuid);
+  }
+
   delete(uuid) {
     this.graph.delete(uuid);
   }

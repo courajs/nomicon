@@ -71,6 +71,11 @@ export default class LiveGraph {
     return this.getPage(uuid);
   }
 
+  async link(fromuuid, touuid) {
+    let atom = this.graph.addEdge(fromuuid, touuid);
+    return this.collection.write([atom]);
+  }
+
   delete(uuid) {
     let atom = this.graph.delete(uuid);
     return this.collection.write([atom]);
@@ -80,7 +85,7 @@ export default class LiveGraph {
 export class LivePage {
   uuid;
   sync; graph; clientId;
-  titleSequence; bodySequence;
+  _titleSequence; _bodySequence;
   @tracked _title = '';
   @tracked _body = '';
   @tracked incoming = [];
@@ -100,16 +105,23 @@ export class LivePage {
     return ['page', this.uuid, 'body'];
   }
 
-  get title() {
-    if (!this.titleSequence) {
-      this.titleSequence = new LiveSequence(this.sync, this.clientId, this.titleCollection);
+  get titleSequence() {
+    if (!this._titleSequence) {
+      this._titleSequence = new LiveSequence(this.sync, this.clientId, this.titleCollection);
     }
+    return this._titleSequence;
+  }
+  get bodySequence() {
+    if (!this._bodySequence) {
+      this._bodySequence = new LiveSequence(this.sync, this.clientId, this.bodyCollection);
+    }
+    return this._bodySequence;
+  }
+
+  get title() {
     return this.titleSequence.value;
   }
   get body() {
-    if (!this.titleSequence) {
-      this.bodySequence = new LiveSequence(this.sync, this.clientId, this.bodyCollection);
-    }
     return this.bodySequence.value;
   }
 }

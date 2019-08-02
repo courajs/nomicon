@@ -84,7 +84,7 @@ export default Controller.extend({
   prompts: taskGroup().drop(),
 
   promptAddOutgoing: task(function* () {
-    let pages = yield this.data.pages;
+    let pages = yield this.graph.pages;
     pages = pages.filter(other => {
       if (other === this.model) {
         return false;
@@ -106,17 +106,18 @@ export default Controller.extend({
     });
     let choice = yield waitForProperty(this, 'modalChoice');
     if (choice === CREATE) {
-      let page = yield this.data.newPage({title: this.modalSearchText});
-      yield this.model.linkTo(page.id);
+      let newPage = yield this.graph.newPage();
+      yield newPage.titleSequence.become(this.modalSearchText);
+      yield this.graph.link(this.model.uuid, page.uuid);
       this.setProperties(MODAL_DEFAULTS);
-      return this.transitionToRoute('page', page.id);
+      return this.transitionToRoute('page', page.uuid);
     }
-    yield this.model.linkTo(choice.id);
+    yield this.graph.link(this.model.uuid, choice.uuid);
     this.setProperties(MODAL_DEFAULTS);
   }).group('prompts'),
 
   promptAddIncoming: task(function* () {
-    let pages = yield this.data.pages;
+    let pages = yield this.graph.pages;
     pages = pages.filter(other => {
       if (other === this.model) {
         return false;
@@ -138,12 +139,13 @@ export default Controller.extend({
     });
     let choice = yield waitForProperty(this, 'modalChoice');
     if (choice === CREATE) {
-      let page = yield this.data.newPage({title: this.modalSearchText});
-      yield this.model.linkFrom(page.id);
+      let newPage = yield this.graph.newPage();
+      yield newPage.titleSequence.become(this.modalSearchText);
+      yield this.graph.link(newPage.uuid, this.model.uuid);
       this.setProperties(MODAL_DEFAULTS);
-      return this.transitionToRoute('page', page.id);
+      return this.transitionToRoute('page', page.uuid);
     }
-    yield this.model.linkFrom(choice.id);
+    yield this.graph.link(choice.uuid, this.model.uuid);
     this.setProperties(MODAL_DEFAULTS);
   }).group('prompts'),
 
@@ -156,7 +158,7 @@ export default Controller.extend({
     });
     let choice = yield waitForProperty(this, 'modalChoice');
     this.setProperties(MODAL_DEFAULTS);
-    return this.transitionToRoute('page', choice.to.id);
+    return this.transitionToRoute('page', choice.to.uuid);
   }).group('prompts'),
 
   promptGoFrom: task(function* () {
@@ -168,7 +170,7 @@ export default Controller.extend({
     });
     let choice = yield waitForProperty(this, 'modalChoice');
     this.setProperties(MODAL_DEFAULTS);
-    return this.transitionToRoute('page', choice.from.id);
+    return this.transitionToRoute('page', choice.from.uuid);
   }).group('prompts'),
 
   close() {
