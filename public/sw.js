@@ -271,7 +271,7 @@ importScripts('/v/unpkg.com/idb@4.0.3/build/iife/index-min.js');
     console.log('authing');
     let db = await self.dbp;
     db.transaction('meta','readwrite').objectStore('meta').put(name, 'client_id');
-    await fetch('https://recurse-graph-api.herokuapp.com/auth',{method: 'POST', mode:'no-cors',credentials:'include', body:name});
+    await fetch('https://recurse-graph-api.herokuapp.com/auth',{method: 'POST', mode:'cors',credentials:'include', body:name});
     resolveAuth(name);
     let socket = await self.pock;
     socket.disconnect();
