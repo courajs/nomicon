@@ -136,7 +136,7 @@ importScripts('/v/unpkg.com/idb@4.0.3/build/iife/index-min.js');
   self.pock = Promise.all([self.authed, self.inited])
     .then(function() {
       console.log('init socket!!');
-      let socket = io('https://recurse-graph-api.herokuapp.com');
+      let socket = io('https://recurse-graph-api.herokuapp.com', {jsonp: false});
       self.socket = socket;
       return socket;
     });
