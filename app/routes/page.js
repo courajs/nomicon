@@ -17,6 +17,10 @@ export default Route.extend({
     let titleSequence = await this.sync.sequence(titleId);
     let bodyId = ['page', page_id, 'body'];
     let bodySequence = await this.sync.sequence(bodyId);
+
+    let graph = this.sync.graph('graph');
+
+    await graph.initial;
     await titleSequence.initial;
     await bodySequence.initial;
 

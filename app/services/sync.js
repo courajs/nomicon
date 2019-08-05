@@ -1,17 +1,74 @@
 import Service, {inject as service} from '@ember/service';
 import Evented from '@ember/object/evented';
 import {task} from 'ember-concurrency';
-import {Observable,Subject} from 'rxjs';
-import {map} from 'rxjs/operators';
+import {Observable,Subject,BehaviorSubject,of,merge} from 'rxjs';
+import {flatMap,map,reduce} from 'rxjs/operators';
 import {EquivMap} from '@thi.ng/associative';
 import {keepLatest} from 'nomicon/lib/concurrency';
 import {CatchUpSubject,TrackedBehavior} from 'nomicon/lib/observables';
 import Sequence from 'nomicon/lib/ordts/sequence';
+import Graph from 'nomicon/lib/ordts/graph';
 import {
   getFromCollection,
   writeToCollection,
   ensureClockForCollection,
 } from 'nomicon/lib/idb';
+
+import * as rxjs from 'rxjs';
+window.rxjs = rxjs;
+import * as operators from 'rxjs/operators';
+window.operators = operators;
+
+
+
+window.emitter = new Subject();
+let catted = emitter.pipe(
+    operators.scan((all,these) => all.concat(these))
+);
+window.result = new BehaviorSubject([]);
+catted.subscribe(result);
+
+
+function enqueue(f) {
+  let running = false;
+  let waiting = [];
+  return function(...args) {
+    if (running) {
+      return new Promise((resolve, reject) => {
+        waiting.push({args,resolve,reject});
+      });
+    } else {
+      running = true;
+      let result = f(...args);
+      result.then(async () => {
+        while (waiting.length) {
+          let {args, resolve, reject} = waiting.shift();
+          await f(...args).then(resolve, reject);
+        }
+        running = false;
+      });
+      return result;
+    }
+  }
+}
+window.enqueue = enqueue;
+
+// for a given collection id, return an operator which
+// will map a stream to updates from the db.
+function fetchNewInResponse(db, collectionId) {
+  let clock = {local:0,remote:0};
+  return flatMap(enqueue(async () => {
+    let result = await getFromCollection(db, collectionId, clock);
+    clock = result.clock;
+    return result.values;
+  }));
+}
+
+
+
+
+
+
 
 
 export default class Sync extends Service {
@@ -26,21 +83,45 @@ export default class Sync extends Service {
   init() {
     window.syncService = this;
     this.notifier.subscribe(this.sw.outgoing);
+    this.idb.db.then(db => {
+      window.fetcherFor = id => {
+        let s = new Subject();
+        return {
+          go: () => s.next(),
+          out: s.pipe(fetchNewInResponse(db, id)),
+        }
+      };
+    });
+  }
+
+  async ordtFromCollection(ordt, id) {
+    let db = await this.idb.db;
+
+    let updates = merge(this.notifier, of(0)).pipe(
+        fetchNewInResponse(db, id),
+        map(update => {
+          ordt.mergeAtoms(update);
+          return ordt;
+        })
+    );
+
+    return new TrackedBehavior(updates);
   }
 
   async sequence(id) {
     await this.auth.awaitAuth;
-    let col = await this.liveCollection(id);
-    let seq = new Sequence(this.auth.clientId, []);
-    let subj = new Subject();
-    let tracked = new TrackedBehavior(subj);
-    col.subscribe({
-      next: (update) => {
-        seq.mergeAtoms(update);
-        subj.next(seq);
-      }
-    });
-    return tracked;
+    return this.ordtFromCollection(
+        new Sequence(this.auth.clientId, []),
+        id
+    );
+  }
+
+  async graph(id) {
+    await this.auth.awaitAuth;
+    return this.ordtFromCollection(
+        new Graph(this.auth.clientId, []),
+        id
+    );
   }
 
   async liveCollection(id) {
