@@ -2,9 +2,11 @@ import Service, {inject as service} from '@ember/service';
 import Evented from '@ember/object/evented';
 import {task} from 'ember-concurrency';
 import {Observable,Subject} from 'rxjs';
+import {map} from 'rxjs/operators';
 import {EquivMap} from '@thi.ng/associative';
 import {keepLatest} from 'nomicon/lib/concurrency';
-import {CatchUpSubject} from 'nomicon/lib/observables';
+import {CatchUpSubject,TrackedBehavior} from 'nomicon/lib/observables';
+import Sequence from 'nomicon/lib/ordts/sequence';
 import {
   getFromCollection,
   writeToCollection,
@@ -13,6 +15,7 @@ import {
 
 
 export default class Sync extends Service {
+  @service auth;
   @service idb;
   @service sw;
 
@@ -23,6 +26,21 @@ export default class Sync extends Service {
   init() {
     window.syncService = this;
     this.notifier.subscribe(this.sw.outgoing);
+  }
+
+  async sequence(id) {
+    await this.auth.awaitAuth;
+    let col = await this.liveCollection(id);
+    let seq = new Sequence(this.auth.clientId, []);
+    let subj = new Subject();
+    let tracked = new TrackedBehavior(subj);
+    col.subscribe({
+      next: (update) => {
+        seq.mergeAtoms(update);
+        subj.next(seq);
+      }
+    });
+    return tracked;
   }
 
   async liveCollection(id) {
@@ -39,6 +57,13 @@ export default class Sync extends Service {
         });
       return collection;
     });
+  }
+
+  async write(collection, values) {
+    await writeToCollection(await this.idb.db, collection, values);
+    let col = await this.liveCollection(collection);
+    col.update();
+    this.notifier.next('update');
   }
 
   //*

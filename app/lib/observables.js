@@ -1,4 +1,5 @@
 import {Subject} from 'rxjs';
+import {tracked} from '@glimmer/tracking';
 
 export function Poker() {
   let s = new Subject();
@@ -22,9 +23,26 @@ export class CatchUpSubject {
   }
 
   subscribe(observer) {
-    if (this.values.length) {
-      observer.next(this.values);
-    }
+    observer.next(this.values);
     return this._inner.subscribe(observer);
+  }
+}
+
+// The point of this is to be a bridge from rx land to ember land.
+// We can either render .value directly, or compute properties based on it,
+// and it will re-render properly.
+export class TrackedBehavior {
+  @tracked value;
+  initial;
+  _resolve;
+
+  constructor(obs) {
+    this.initial = new Promise(r => this._resolve = r);
+    obs.subscribe({
+      next: (val) => {
+        this.value = val;
+        this._resolve(this);
+      }
+    });
   }
 }

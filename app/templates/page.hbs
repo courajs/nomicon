@@ -25,9 +25,23 @@
   <img src="/img/outgoing.svg" class="h-16 w-16"> 
 </div>
 
-<PageEditor
-  @page={{this.model}}
-/>
+<div class="m-4">
+  <label for="title" class="block text-grey-darker text-sm mb-2">
+    Title
+  </label>
+  <LiveInput
+    @sequence={{this.model.title}}
+    placeholder="Untitled"
+    class="shadow appearance-none border rounded w-full py-2 px-3 text-grey-darker leading-tight focus:outline-none focus:shadow-outline" />
+</div>
+<div class="m-4">
+  <LiveTextarea
+    @sequence={{this.model.body}}
+    placeholder="Blah blee bloop"
+    rows="30"
+    class="w-full shadow-inner p-4 border"
+  />
+</div>
 
 {{#if showModal}}
   <Modal @close={{bind this.close}}>
@@ -48,7 +62,7 @@
 
 <br>
 <button
-  onclick={{perform destroyPage this.model}}
+  onclick={{perform destroyPage this.page}}
   class="bg-red hover:bg-blue-dark text-white py-2 px-4 rounded mx-auto"
 >
   Delete

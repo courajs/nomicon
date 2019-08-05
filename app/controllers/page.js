@@ -1,6 +1,7 @@
 import Controller from '@ember/controller';
 import {inject} from '@ember/service';
 import {computed} from '@ember/object';
+import {alias} from '@ember/object/computed';
 import {task, taskGroup, waitForProperty} from 'ember-concurrency';
 
 import {bound} from 'nomicon/lib/hotkeys';
@@ -17,8 +18,10 @@ const MODAL_DEFAULTS = {
 };
 
 export default Controller.extend({
-  data: inject(),
   graph: inject(),
+
+  page: alias('model.page'),
+  title: alias('model.titleSequence'),
 
   //   ...MODAL_DEFAULTS,
   //   ^ this breaks an ESLint rule
@@ -57,8 +60,8 @@ export default Controller.extend({
     this.set('modalSearchText', searchText);
   },
 
-  incoming: computed('model', function() {
-    return this.model.incoming.slice().sort((a,b) => {
+  incoming: computed('page', function() {
+    return this.page.incoming.slice().sort((a,b) => {
       a = a.from.title;
       b = b.from.title;
       if (a > b) {
@@ -70,8 +73,8 @@ export default Controller.extend({
       }
     });
   }),
-  outgoing: computed('model', function() {
-    return this.model.outgoing.slice().sort((a,b) => {
+  outgoing: computed('page', function() {
+    return this.page.outgoing.slice().sort((a,b) => {
       if (a.title > b.title) {
         return 1;
       } else if (a.title < b.title) {
@@ -87,10 +90,10 @@ export default Controller.extend({
   promptAddOutgoing: task(function* () {
     let pages = yield this.graph.pages;
     pages = pages.filter(other => {
-      if (other === this.model) {
+      if (other === this.page) {
         return false;
       }
-      for (let l of this.model.outgoing) {
+      for (let l of this.page.outgoing) {
         if (other === l.to) {
           return false;
         }
@@ -109,21 +112,21 @@ export default Controller.extend({
     if (choice === CREATE) {
       let newPage = yield this.graph.newPage();
       yield newPage.titleSequence.become(this.modalSearchText);
-      yield this.graph.link(this.model.uuid, newPage.uuid);
+      yield this.graph.link(this.page.uuid, newPage.uuid);
       this.setProperties(MODAL_DEFAULTS);
       return this.transitionToRoute('page', newPage.uuid);
     }
-    yield this.graph.link(this.model.uuid, choice.uuid);
+    yield this.graph.link(this.page.uuid, choice.uuid);
     this.setProperties(MODAL_DEFAULTS);
   }).group('prompts'),
 
   promptAddIncoming: task(function* () {
     let pages = yield this.graph.pages;
     pages = pages.filter(other => {
-      if (other === this.model) {
+      if (other === this.page) {
         return false;
       }
-      for (let l of this.model.incoming) {
+      for (let l of this.page.incoming) {
         if (other === l.from) {
           return false;
         }
@@ -142,11 +145,11 @@ export default Controller.extend({
     if (choice === CREATE) {
       let newPage = yield this.graph.newPage();
       yield newPage.titleSequence.become(this.modalSearchText);
-      yield this.graph.link(newPage.uuid, this.model.uuid);
+      yield this.graph.link(newPage.uuid, this.page.uuid);
       this.setProperties(MODAL_DEFAULTS);
       return this.transitionToRoute('page', newPage.uuid);
     }
-    yield this.graph.link(choice.uuid, this.model.uuid);
+    yield this.graph.link(choice.uuid, this.page.uuid);
     this.setProperties(MODAL_DEFAULTS);
   }).group('prompts'),
 
@@ -154,7 +157,7 @@ export default Controller.extend({
     this.setProperties({
       showModal: true,
       modalLabel: 'Go to...',
-      modalOptions: this.model.outgoing,
+      modalOptions: this.page.outgoing,
       modalPath: 'to.title',
     });
     let choice = yield waitForProperty(this, 'modalChoice');
@@ -166,7 +169,7 @@ export default Controller.extend({
     this.setProperties({
       showModal: true,
       modalLabel: 'Go to...',
-      modalOptions: this.model.incoming,
+      modalOptions: this.page.incoming,
       modalPath: 'from.title',
     });
     let choice = yield waitForProperty(this, 'modalChoice');
