@@ -97,15 +97,13 @@ export default class Sync extends Service {
   async ordtFromCollection(ordt, id) {
     let db = await this.idb.db;
 
-    let updates = merge(this.notifier, of(0)).pipe(
+    return merge(this.notifier, of(0)).pipe(
         fetchNewInResponse(db, id),
         map(update => {
           ordt.mergeAtoms(update);
           return ordt;
         })
     );
-
-    return new TrackedBehavior(updates);
   }
 
   async sequence(id) {
