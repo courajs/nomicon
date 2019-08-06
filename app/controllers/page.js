@@ -22,6 +22,8 @@ export default Controller.extend({
 
   page: alias('model.page'),
   title: alias('model.titleSequence'),
+  incoming: alias('model.links.value.incoming'),
+  outgoing: alias('model.links.value.outgoing'),
 
   //   ...MODAL_DEFAULTS,
   //   ^ this breaks an ESLint rule
@@ -59,31 +61,6 @@ export default Controller.extend({
     this.set('modalChoice', choice);
     this.set('modalSearchText', searchText);
   },
-
-  incoming: computed('page', function() {
-    return this.page.incoming.slice().sort((a,b) => {
-      a = a.from.title;
-      b = b.from.title;
-      if (a > b) {
-        return 1;
-      } else if (a < b) {
-        return -1;
-      } else {
-        return 0;
-      }
-    });
-  }),
-  outgoing: computed('page', function() {
-    return this.page.outgoing.slice().sort((a,b) => {
-      if (a.title > b.title) {
-        return 1;
-      } else if (a.title < b.title) {
-        return -1;
-      } else {
-        return 0;
-      }
-    });
-  }),
 
   prompts: taskGroup().drop(),
 

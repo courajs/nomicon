@@ -1,6 +1,6 @@
 import Route from '@ember/routing/route';
 import {inject} from '@ember/service';
-import {flatMap} from 'rxjs/operators';
+import {concatMap} from 'rxjs/operators';
 
 import {TrackedBehavior} from 'nomicon/lib/observables';
 
@@ -23,20 +23,22 @@ export default Route.extend({
 
     let graph = await this.sync.graph('graph');
 
-    let thing = graph.pipe(
-        flatMap(async g => {
+    let links = graph.pipe(
+        concatMap(async g => {
           let {incoming,outgoing} = g.evaluate();
           incoming = incoming[page_id] || [];
           outgoing = outgoing[page_id] || [];
           incoming = incoming.map(async l => {
             return {
-              uuid: l.uuid,
+              link_uuid: l.uuid,
+              page_uuid: l.from,
               title: await this.sync.sequence(['page', l.from, 'title']),
             };
           });
           outgoing = outgoing.map(async l => {
             return {
-              uuid: l.uuid,
+              link_uuid: l.uuid,
+              page_uuid: l.to,
               title: await this.sync.sequence(['page', l.to, 'title']),
             };
           });
@@ -46,14 +48,16 @@ export default Route.extend({
           incoming = incoming.map(async l => {
             let tracked = await new TrackedBehavior(l.title).initial;
             return {
-              uuid: l.uuid,
+              link_uuid: l.link_uuid,
+              page_uuid: l.page_uuid,
               title: tracked,
             };
           });
           outgoing = outgoing.map(async l => {
             let tracked = await new TrackedBehavior(l.title).initial;
             return {
-              uuid: l.uuid,
+              link_uuid: l.link_uuid,
+              page_uuid: l.page_uuid,
               title: tracked,
             };
           });
@@ -65,23 +69,15 @@ export default Route.extend({
           };
         }),
     );
+    links = new TrackedBehavior(links);
 
-    thing.subscribe({
-      next(thing) {
-        window.latest = thing;
-        console.log(thing);
-      }
-    });
-
-
-
-    // await graph.initial;
+    await links.initial;
     await titleSequence.initial;
     await bodySequence.initial;
 
     return {
       page,
-      graph,
+      links,
       uuid: page_id,
       title: {
         id: titleId,
