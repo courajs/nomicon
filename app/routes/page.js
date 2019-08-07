@@ -1,12 +1,8 @@
 import Route from '@ember/routing/route';
-import {inject} from '@ember/service';
-import {concatMap,tap} from 'rxjs/operators';
+import {inject as service} from '@ember/service';
 
-import {TrackedBehavior} from 'nomicon/lib/observables';
-
-export default Route.extend({
-  sync: inject(),
-  graph: inject(),
+export default class extends Route {
+  @service graph;
 
   async model({page_id}) {
     // we have the page uuid
@@ -27,4 +23,4 @@ export default Route.extend({
       ...attrs,
     };
   }
-});
+}
