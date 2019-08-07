@@ -8,14 +8,14 @@ export default class GraphService extends Service {
   @service sync;
   @service auth;
 
-  @tracked graph;
+  @tracked _graph;
   @tracked _pages;
 
   async init() {
     await this.auth.awaitAuth;
-    this.graph = new LiveGraph('graph', this.auth.clientId, this.sync);
     window.graphservice = this;
-    this._pages = await this.allPages();
+    this._graph = new TrackedBehavior(await this.sync.graph('graph'));
+    this._pages = await this._allPages();
   }
 
 
@@ -40,6 +40,14 @@ export default class GraphService extends Service {
         seq: body,
       },
     };
+  }
+
+  async titleForPage(uuid) {
+    let id = ['page',uuid,'title'];
+    return {
+      id: ['page',uuid,'title'],
+      seq: await this.trackedSequence(id),
+    }
   }
 
   async trackedSequence(id) {
@@ -82,7 +90,7 @@ export default class GraphService extends Service {
     return await new TrackedBehavior(links).initial;
   }
 
-  async allPages() {
+  async _allPages() {
     let graph = await this.sync.graph('graph');
     let links = graph.pipe(
         concatMap(async g => {
@@ -108,25 +116,30 @@ export default class GraphService extends Service {
     }
   }
 
-  async getPage(page_id) {
-    await this.auth.awaitAuth;
-    return this.graph.getPage(page_id);
-  }
-
 
   // Mutations
 
   async newPage() {
     await this.auth.awaitAuth;
-    await this.graph.syncedOnce;
-    return this.graph.newPage();
+    await this._graph.initial;
+    let atom = this._graph.value.addNode();
+    await this.sync.write('graph', [atom]);
+    return atom;
   }
 
-  link(fromuuid, touuid) {
-    return this.graph.link(fromuuid, touuid);
+  async link(fromuuid, touuid) {
+    await this.auth.awaitAuth;
+    await this._graph.initial;
+    let atom = this._graph.value.addEdge(fromuuid, touuid);
+    await this.sync.write('graph', [atom]);
+    return atom;
   }
 
-  delete(uuid) {
-    return this.graph.delete(uuid);
+  async delete(uuid) {
+    await this.auth.awaitAuth;
+    await this._graph.initial;
+    let atom = this._graph.delete(uuid);
+    await this.sync.write('graph', [atom]);
+    return;
   }
 }

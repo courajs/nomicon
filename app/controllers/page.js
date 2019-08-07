@@ -19,6 +19,7 @@ const MODAL_DEFAULTS = {
 
 export default Controller.extend({
   graph: inject(),
+  sync: inject(),
 
   page: alias('model.page'),
   title: alias('model.titleSequence'),
@@ -65,69 +66,67 @@ export default Controller.extend({
   prompts: taskGroup().drop(),
 
   promptAddOutgoing: task(function* () {
-    let pages = yield this.graph.pages;
+    let pages = this.graph.pages;
+    let uuid = this.model.uuid;
     pages = pages.filter(other => {
-      if (other === this.page) {
+      if (other.uuid === uuid) {
         return false;
       }
-      for (let l of this.page.outgoing) {
-        if (other === l.to) {
-          return false;
-        }
-      }
-      return true;
+      return !this.outgoing.some(l => l.page_uuid === other.uuid);
     });
 
     this.setProperties({
       showModal: true,
       modalLabel: 'Add outgoing link...',
       modalOptions: pages,
-      modalPath: "title",
+      modalPath: "title.value",
       modalShowCreateOption: true,
     });
     let choice = yield waitForProperty(this, 'modalChoice');
     if (choice === CREATE) {
-      let newPage = yield this.graph.newPage();
-      yield newPage.titleSequence.become(this.modalSearchText);
-      yield this.graph.link(this.page.uuid, newPage.uuid);
+      let newPageAtom = yield this.graph.newPage();
+      let {id,seq} = yield this.graph.titleForPage(newPageAtom.uuid);
+      let fresh = seq.value.become(this.modalSearchText);
+      yield this.sync.write(id, fresh);
+      yield this.graph.link(uuid, newPageAtom.uuid);
       this.setProperties(MODAL_DEFAULTS);
-      return this.transitionToRoute('page', newPage.uuid);
+      return this.transitionToRoute('page', newPageAtom.uuid);
+    } else {
+      yield this.graph.link(uuid, choice.uuid);
+      this.setProperties(MODAL_DEFAULTS);
     }
-    yield this.graph.link(this.page.uuid, choice.uuid);
-    this.setProperties(MODAL_DEFAULTS);
   }).group('prompts'),
 
   promptAddIncoming: task(function* () {
-    let pages = yield this.graph.pages;
+    let pages = this.graph.pages;
+    let uuid = this.model.uuid;
     pages = pages.filter(other => {
-      if (other === this.page) {
+      if (other.uuid === uuid) {
         return false;
       }
-      for (let l of this.page.incoming) {
-        if (other === l.from) {
-          return false;
-        }
-      }
-      return true;
+      return !this.incoming.some(l => l.page_uuid === other.uuid);
     });
 
     this.setProperties({
       showModal: true,
       modalLabel: 'Add incoming link...',
       modalOptions: pages,
-      modalPath: 'title',
+      modalPath: 'title.value',
       modalShowCreateOption: true,
     });
     let choice = yield waitForProperty(this, 'modalChoice');
     if (choice === CREATE) {
-      let newPage = yield this.graph.newPage();
-      yield newPage.titleSequence.become(this.modalSearchText);
-      yield this.graph.link(newPage.uuid, this.page.uuid);
+      let newPageAtom = yield this.graph.newPage();
+      let {id,seq} = yield this.graph.titleForPage(newPageAtom.uuid);
+      let fresh = seq.value.become(this.modalSearchText);
+      yield this.sync.write(id, fresh);
+      yield this.graph.link(newPageAtom.uuid, uuid);
       this.setProperties(MODAL_DEFAULTS);
-      return this.transitionToRoute('page', newPage.uuid);
+      return this.transitionToRoute('page', newPageAtom.uuid);
+    } else {
+      yield this.graph.link(choice.uuid, uuid);
+      this.setProperties(MODAL_DEFAULTS);
     }
-    yield this.graph.link(choice.uuid, this.page.uuid);
-    this.setProperties(MODAL_DEFAULTS);
   }).group('prompts'),
 
   promptGoTo: task(function* () {

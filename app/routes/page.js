@@ -9,7 +9,6 @@ export default Route.extend({
   graph: inject(),
 
   async model({page_id}) {
-    let page = await this.graph.getPage(page_id);
     // we have the page uuid
     // we need the title sequence
     // we need the body sequence
@@ -23,7 +22,6 @@ export default Route.extend({
     attrs = await attrs;
 
     return {
-      page,
       uuid: page_id,
       links,
       ...attrs,
