@@ -90,6 +90,8 @@ export default class Sync extends Service {
   async ordtFromCollection(ordt, id) {
     let db = await this.idb.db;
 
+    await ensureClockForCollection(db, id);
+
     // of(0) primes it with an initial fetch
     return merge(this.localNotifier, this.swNotifier, of(0)).pipe(
         fetchNewInResponse(db, id),
