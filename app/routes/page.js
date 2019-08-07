@@ -1,6 +1,6 @@
 import Route from '@ember/routing/route';
 import {inject} from '@ember/service';
-import {concatMap} from 'rxjs/operators';
+import {concatMap,tap} from 'rxjs/operators';
 
 import {TrackedBehavior} from 'nomicon/lib/observables';
 
@@ -17,7 +17,8 @@ export default Route.extend({
     // we need the title of all linked pages
 
     let titleId = ['page', page_id, 'title'];
-    let titleSequence = new TrackedBehavior(await this.sync.sequence(titleId));
+    let seq = await this.sync.sequence(titleId)
+    let titleSequence = new TrackedBehavior(seq);
     let bodyId = ['page', page_id, 'body'];
     let bodySequence = new TrackedBehavior(await this.sync.sequence(bodyId));
 

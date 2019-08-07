@@ -78,26 +78,20 @@ export default class Sync extends Service {
 
   _id_map = new EquivMap();
 
-  notifier = new Subject();
+  swNotifier = new Subject();
+  localNotifier = new Subject();
 
   init() {
     window.syncService = this;
-    this.notifier.subscribe(this.sw.outgoing);
-    this.idb.db.then(db => {
-      window.fetcherFor = id => {
-        let s = new Subject();
-        return {
-          go: () => s.next(),
-          out: s.pipe(fetchNewInResponse(db, id)),
-        }
-      };
-    });
+    this.swNotifier.subscribe(this.sw.outgoing);
+    this.sw.on('update').subscribe(this.localNotifier);
   }
 
   async ordtFromCollection(ordt, id) {
     let db = await this.idb.db;
 
-    return merge(this.notifier, of(0)).pipe(
+    // of(0) primes it with an initial fetch
+    return merge(this.localNotifier, this.swNotifier, of(0)).pipe(
         fetchNewInResponse(db, id),
         map(update => {
           ordt.mergeAtoms(update);
@@ -127,7 +121,7 @@ export default class Sync extends Service {
 
     return getOrCreate(this._id_map, id, ()=>{
       let collection = new CollectionConnection(db, id);
-      collection.notifications.subscribe(this.notifier);
+      collection.notifications.subscribe(this.swNotifier);
       ensureClockForCollection(db, id)
         .then(() => {
           this.sw.on('update').forEach(()=>collection.update());
@@ -142,7 +136,8 @@ export default class Sync extends Service {
     await writeToCollection(await this.idb.db, collection, values);
     let col = await this.liveCollection(collection);
     col.update();
-    this.notifier.next('update');
+    this.swNotifier.next('update');
+    this.localNotifier.next();
   }
 
   //*
