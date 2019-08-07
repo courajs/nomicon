@@ -37,8 +37,8 @@ export default Controller.extend({
   modalShowCreateOption: false,
   modalSearchText: '',
 
-  destroyPage: task(function* (page) {
-    yield this.graph.delete(page.uuid);
+  destroyPage: task(function* (uuid) {
+    yield this.graph.delete(uuid);
     yield this.transitionToRoute('home');
   }),
 
