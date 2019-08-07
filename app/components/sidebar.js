@@ -1,7 +1,10 @@
-import Component from '@ember/component';
-import {inject} from '@ember/service';
+import Component from '@glimmer/component';
+import {inject as service} from '@ember/service';
 
-export default Component.extend({
-  data: inject(),
-  graph: inject(),
-});
+export default class extends Component {
+  @service graph;
+
+  get pages() {
+    return this.graph.allPages();
+  }
+}
