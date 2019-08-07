@@ -3,8 +3,4 @@ import {inject as service} from '@ember/service';
 
 export default class extends Component {
   @service graph;
-
-  get pages() {
-    return this.graph.allPages();
-  }
 }

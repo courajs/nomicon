@@ -9,11 +9,13 @@ export default class GraphService extends Service {
   @service auth;
 
   @tracked graph;
+  @tracked _pages;
 
   async init() {
     await this.auth.awaitAuth;
     this.graph = new LiveGraph('graph', this.auth.clientId, this.sync);
     window.graphservice = this;
+    this._pages = await this.allPages();
   }
 
 
@@ -93,10 +95,10 @@ export default class GraphService extends Service {
   }
 
   get pages() {
-    if (this.graph) {
-      return this.graph.pages;
+    if (this._pages) {
+      return this._pages.value;
     } else {
-      [];
+      return [];
     }
   }
 

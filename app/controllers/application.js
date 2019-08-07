@@ -28,6 +28,15 @@ export default Controller.extend({
     this.set('showModal', false);
   },
 
+  get pages() {
+    return this.graph.pages.map(p => {
+      return {
+        uuid: p.uuid,
+        title: p.title.value.evaluate(),
+      };
+    });
+  },
+
   authenticate(e) {
     e.preventDefault();
     this.auth.authenticateAs(this.clientId);
