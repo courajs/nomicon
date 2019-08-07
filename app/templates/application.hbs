@@ -29,8 +29,8 @@
     <Modal @close={{action (mut this.showModal) false}}>
       <Typeahead
         @choose={{bind this.goToPage}}
-        @options={{this.pages}}
-        @path="title"
+        @options={{this.graph.pages}}
+        @path="title.value"
         @placeholder="Go to page..."
       />
     </Modal>

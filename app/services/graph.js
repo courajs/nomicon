@@ -1,6 +1,6 @@
 import Service, {inject as service} from '@ember/service';
 import {tracked} from '@glimmer/tracking';
-import {concatMap} from 'rxjs/operators';
+import {map,concatMap} from 'rxjs/operators';
 import LiveGraph from 'nomicon/lib/live/graph';
 import {TrackedBehavior} from 'nomicon/lib/observables';
 
@@ -46,6 +46,12 @@ export default class GraphService extends Service {
     return await new TrackedBehavior(await this.sync.sequence(id)).initial;
   }
 
+  async trackedReadOnlySequence(id) {
+    let seq = await this.sync.sequence(id);
+    let mapper = map(seq => seq.evaluate());
+    return await new TrackedBehavior(mapper(seq)).initial;
+  }
+
   async linksForPage(uuid) {
     let graph = await this.sync.graph('graph');
     let links = graph.pipe(
@@ -57,14 +63,14 @@ export default class GraphService extends Service {
             return {
               link_uuid: l.uuid,
               page_uuid: l.from,
-              title: await this.trackedSequence(['page',l.from,'title']),
+              title: await this.trackedReadOnlySequence(['page',l.from,'title']),
             };
           });
           outgoing = outgoing.map(async l => {
             return {
               link_uuid: l.uuid,
               page_uuid: l.to,
-              title: await this.trackedSequence(['page',l.to,'title']),
+              title: await this.trackedReadOnlySequence(['page',l.to,'title']),
             };
           });
           return {
@@ -85,7 +91,7 @@ export default class GraphService extends Service {
               nodes.map(async n => {
                 return {
                   uuid: n,
-                  title: await this.trackedSequence(['page',n,'title']),
+                  title: await this.trackedReadOnlySequence(['page',n,'title']),
                 };
               })
           );

@@ -39,7 +39,7 @@
   <h2>Pages</h2>
   <ul class="mt-4 mb-12">
     {{#each this.graph.pages key="uuid" as |page|}}
-      <li>{{link-to (or (method page.title.value 'evaluate') '<untitled>') 'page' page.uuid}}</li>
+      <li>{{link-to (or page.title.value '<untitled>') 'page' page.uuid}}</li>
     {{else}}
       <p class="text-grey-darker">&lt;none&gt;</p>
     {{/each}}
