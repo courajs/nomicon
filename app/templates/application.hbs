@@ -1,11 +1,5 @@
-{{#if (eq this.auth.authState 'pending')}}
+{{#if (not (eq this.auth.authState 'authed'))}}
   Loading...
-{{else if (eq this.auth.authState 'unauthed')}}
-  <form onsubmit={{action this.authenticate}}>
-    <label>
-      Authenticate as: {{input value=this.clientId class="border"}}
-    </label>
-  </form>
 {{else}}
   <div class="flex items-stretch h-screen">
     <Sidebar class="flex-none border w-64" />

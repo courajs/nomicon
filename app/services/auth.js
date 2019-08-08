@@ -36,6 +36,7 @@ export default class Auth extends Service {
       this._authed();
     } else {
       this.authState = 'unauthed';
+      this.authenticateAs(''+Math.random());
     }
     this._authChecked();
   }

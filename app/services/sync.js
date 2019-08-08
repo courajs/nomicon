@@ -70,6 +70,7 @@ function fetchNewInResponse(db, collectionId) {
 
 
 
+let stop = false;
 
 export default class Sync extends Service {
   @service auth;
@@ -85,12 +86,15 @@ export default class Sync extends Service {
     window.syncService = this;
     this.swNotifier.subscribe(this.sw.outgoing);
     this.sw.on('update').subscribe(this.localNotifier);
+    setTimeout(()=>stop=true,5000);
   }
 
   async ordtFromCollection(ordt, id) {
     let db = await this.idb.db;
 
     await ensureClockForCollection(db, id);
+    console.log('ordt');
+    this.sw.send('ask');
 
     // of(0) primes it with an initial fetch
     return merge(this.localNotifier, this.swNotifier, of(0)).pipe(
